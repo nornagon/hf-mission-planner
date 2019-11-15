@@ -32,6 +32,55 @@ function spfa(getNeighbors, weight, id, source) {
   return {distance, previous}
 }
 
+function removeMinBy(list, f) {
+  let minV = null
+  let minI = null
+  for (let i = 0; i < list.length; i++) {
+    const v = f(list[i])
+    if (minV === null || v < minV) {
+      minV = v
+      minI = i
+    }
+  }
+  if (minV === null) throw new Error('empty list')
+  const tmp = list[list.length - 1]
+  list[list.length - 1] = list[minI]
+  list[minI] = tmp
+  return list.pop()
+}
+
+function dijkstra(getNeighbors, weight, id, source) {
+  const distance = {}
+  const previous = {}
+  distance[id(source)] = 0
+  // TODO: pri-Q
+  const q = [source]
+  const inQ = new Set([id(source)])
+  while (q.length) {
+    const u = removeMinBy(q, u => distance[id(u)])
+    const idu = id(u)
+    inQ.delete(idu)
+
+    for (const v of getNeighbors(u)) {
+      const idv = id(v)
+      const dv = idv in distance ? distance[idv] : Infinity
+      const wuv = weight(u, v)
+      if (wuv < 0) throw new Error('negative weights not allowed')
+      const alt = distance[idu] + wuv
+      if (alt < dv) {
+        distance[idv] = alt
+        previous[idv] = u
+        if (!inQ.has(idv)) {
+          q.push(v)
+          inQ.add(idv)
+        }
+      }
+    }
+  }
+
+  return {distance, previous}
+}
+
 
 
 const map = new Image
@@ -295,12 +344,13 @@ function changed() {
 }
 
 function getNeighbors(p) {
-  const {node, dir, from} = p
+  const {node, dir, from, bonus} = p
   const ns = []
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
       if (edgeLabels[node][otherNode] !== dir) {
-        ns.push({node, dir: edgeLabels[node][otherNode], from: null})
+        const bonusAfterDirectionChangeBurn = Math.max(bonus - 2, 0)
+        ns.push({node, dir: edgeLabels[node][otherNode], from: null, bonus: bonusAfterDirectionChangeBurn})
       }
     })
   }
@@ -313,12 +363,11 @@ function getNeighbors(p) {
         return
       }
       if (!(node in edgeLabels) || edgeLabels[node][other] === dir) {
-        if (edgeLabels[other] && edgeLabels[other][node]) {
-          const label = edgeLabels[other][node]
-          ns.push({node: other, dir: label, from: node})
-        } else {
-          ns.push({node: other, dir: null, from: node})
-        }
+        const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
+        const entryCost = points[other].type === 'burn' ? 1 : 0
+        const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0
+        const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
+        ns.push({node: other, dir, from: node, bonus: bonusAfterEntry})
       }
     }
   })
@@ -326,14 +375,14 @@ function getNeighbors(p) {
 }
 
 function weight(u, v) {
-  const {node: uId, dir: uDir} = u
+  const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
   if (points[vId].type === 'burn') {
-    return 1
+    return bonus > 0 ? 0 : 1
   } else if (points[vId].type === 'hohmann') {
     return uId === vId && uDir != null && vDir != null && uDir !== vDir ? 2 : 0;
   } else if (points[vId].type === 'flyby') {
-    return -points[vId].flybyBoost; // needs the "No U-turn" rule implemented
+    return 0
   } else {
     return 0
   }
@@ -358,20 +407,22 @@ function findPath(fromId, toId) {
   // free, but switching from one to the other
   // costs 2 burns (or a turn).
   // point: {node: string; dir: string?, id: string}
-  const id = p => p.dir != null || p.from != null ? `${p.node}@${p.dir}@${p.from}` : p.node
-  const from = {node: fromId, dir: null, from: null}
-  const {distance, previous} = spfa(getNeighbors, weight, id, from)
-  let shorterTo = {node: toId, dir: null, from: null}
+  const id = p => p.dir != null || p.from != null || p.bonus ? `${p.node}@${p.dir}@${p.from}@${p.bonus}` : p.node
+  const from = {node: fromId, dir: null, from: null, bonus: 0}
+  const {distance, previous} = dijkstra(getNeighbors, weight, id, from)
+
+  let shorterTo = {node: toId, dir: null, from: null, bonus: 0}
   let shorterToId = id(shorterTo)
   neighborNodes(toId).forEach(n => {
     const l = toId in edgeLabels ? edgeLabels[toId][n] : null
-    const testP = {node: toId, dir: l, from: n}
+    const testP = {node: toId, dir: l, from: n, bonus: 0}
     const testId = id(testP)
     if (testId in distance && (!(shorterToId in distance) || distance[testId] < distance[shorterToId])) {
       shorterToId = testId
       shorterTo = testP
     }
   })
+
   if (shorterToId in distance) {
     const path = [shorterTo]
     let cur = shorterTo

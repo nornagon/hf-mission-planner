@@ -72,8 +72,7 @@ const deleteEdge = (a, b) => {
 const edgeLabels = {}
 let drawingPoints = true
 
-if ('data' in localStorage) {
-  const data = JSON.parse(localStorage.data)
+const loadData = (data) => {
   for (let p in data.points) {
     points[p] = data.points[p]
   }
@@ -85,6 +84,12 @@ if ('data' in localStorage) {
     edgeLabels[l] = data.edgeLabels[l]
   }
   setTimeout(draw, 0)
+}
+
+if ('data' in localStorage) {
+  loadData(JSON.parse(localStorage.data))
+} else if (location.protocol !== 'file:') {
+  fetch('data.json').then(r => r.json()).then(loadData)
 }
 function changed() {
   localStorage.data = JSON.stringify({

@@ -96,7 +96,7 @@ function changed() {
 
 
 function neighborNodes(nodeId) {
-  return Array.from(neighbors_.get(nodeId)) || []
+  return Array.from(neighbors_.get(nodeId) || [])
 }
 
 canvas.onclick = e => {

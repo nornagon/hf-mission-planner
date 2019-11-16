@@ -1,29 +1,12 @@
-function removeMinBy(list, f) {
-  let minV = null
-  let minI = null
-  for (let i = 0; i < list.length; i++) {
-    const v = f(list[i])
-    if (minV === null || v < minV) {
-      minV = v
-      minI = i
-    }
-  }
-  if (minV === null) throw new Error('empty list')
-  const tmp = list[list.length - 1]
-  list[list.length - 1] = list[minI]
-  list[minI] = tmp
-  return list.pop()
-}
-
 function dijkstra(getNeighbors, weight, id, source) {
   const distance = {}
   const previous = {}
   distance[id(source)] = 0
-  // TODO: pri-Q
-  const q = [source]
+  const q = new Heap()
+  q.insert(0, source)
   const inQ = new Set([id(source)])
-  while (q.length) {
-    const u = removeMinBy(q, u => distance[id(u)])
+  while (!q.isEmpty()) {
+    const u = q.remove()
     const idu = id(u)
     inQ.delete(idu)
 
@@ -36,8 +19,14 @@ function dijkstra(getNeighbors, weight, id, source) {
       if (alt < dv) {
         distance[idv] = alt
         previous[idv] = u
-        if (!inQ.has(idv)) {
-          q.push(v)
+        if (inQ.has(idv)) {
+          // already in the queue, adjust its priority
+          const index = q.nodes_.findIndex(n => id(n.getValue()) === idv)
+          if (index < 0) throw new Error('programming error, inQ did not match q')
+          q.nodes_[index].key_ = alt
+          q.moveUp_(index)
+        } else {
+          q.insert(alt, v)
           inQ.add(idv)
         }
       }
@@ -282,7 +271,9 @@ window.onkeydown = e => {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (pathing) {
       if (closestId && closestId !== pathing) {
+        console.time('finding path')
         highlightedPath = findPath(pathing, closestId)
+        console.timeEnd('finding path')
         pathing = null
       }
     } else {

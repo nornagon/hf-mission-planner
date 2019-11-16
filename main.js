@@ -1,37 +1,3 @@
-// https://en.wikipedia.org/wiki/Shortest_Path_Faster_Algorithm
-function spfa(getNeighbors, weight, id, source) {
-  const distance = {}
-  const previous = {}
-  distance[id(source)] = 0
-  const q = [source]
-  const inQ = new Set([id(source)])
-  const cnt = {}
-  cnt[id(source)] = 1
-  while (q.length) {
-    const u = q.shift()
-    inQ.delete(id(u))
-    for (let v of getNeighbors(u)) {
-      const idv = id(v)
-      const du = id(u) in distance ? distance[id(u)] : Infinity
-      const dv = idv in distance ? distance[idv] : Infinity
-      const wuv = weight(u, v)
-      if (du + wuv < dv) {
-        distance[idv] = du + wuv
-        previous[idv] = u
-        if (!inQ.has(idv)) {
-          q.push(v)
-          inQ.add(idv)
-          cnt[idv] = (cnt[idv] || 0) + 1
-          if (cnt[idv] > 1000) { // TODO: 1000 = #verts
-            throw Error("negative-weight cycle probably")
-          }
-        }
-      }
-    }
-  }
-  return {distance, previous}
-}
-
 function removeMinBy(list, f) {
   let minV = null
   let minI = null
@@ -353,6 +319,12 @@ function getNeighbors(p) {
         ns.push({node, dir: edgeLabels[node][otherNode], from: null, bonus: bonusAfterDirectionChangeBurn})
       }
     })
+  }
+  if (bonus) {
+    // you can always throw away your extra burns if you want.
+    // this also allows the path finder to not have to search for the
+    // destination node at different amounts of bonus.
+    ns.push({node, dir, from, bonus: 0})
   }
   edges.forEach(e => {
     const [a, b] = e.split(":")

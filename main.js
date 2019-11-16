@@ -339,7 +339,7 @@ function getNeighbors(p) {
     if (edgeLabels[other] && edgeLabels[other][node] === '0') {
       return
     }
-    if (!(node in edgeLabels) || edgeLabels[node][other] === dir) {
+    if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? 1 : 0
       const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0

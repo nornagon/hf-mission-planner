@@ -522,7 +522,7 @@ function draw() {
   }
   if (highlightedPath) {
     ctx.save()
-    ctx.lineWidth = 8
+    ctx.lineWidth = 16
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.strokeStyle = 'rgba(255,0,0,0.5)'

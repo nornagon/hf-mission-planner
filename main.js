@@ -296,6 +296,15 @@ window.onkeydown = e => {
     drawingPoints = !drawingPoints
     e.preventDefault()
   }
+  if (e.code === 'Backquote') {
+    const pId = nearestPoint(mousePos.x, mousePos.y)
+    if (pId) {
+      const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
+      const from = {node: pId, dir: null}
+      debugPathfinding = dijkstra(getNeighbors, weight, id, from)
+      draw()
+    }
+  }
   draw()
 }
 
@@ -345,18 +354,6 @@ function weight(u, v) {
     return 0
   }
 }
-
-window.addEventListener('keydown', e => {
-  if (e.code === 'Backquote') {
-    const pId = nearestPoint(mousePos.x, mousePos.y)
-    if (pId) {
-      const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
-      const from = {node: pId, dir: null}
-      debugPathfinding = spfa(getNeighbors, weight, id, from)
-      draw()
-    }
-  }
-})
 
 function findPath(fromId, toId) {
   // NB for pathfinding along Hohmanns each

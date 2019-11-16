@@ -78,7 +78,11 @@ const loadData = (data) => {
   }
   for (let e of data.edges) {
     const [a, b] = e.split(':')
-    addEdge(a, b)
+    if (!((a in points) && (b in points))) {
+      console.warn(`removing dead edge: ${e}`)
+    } else {
+      addEdge(a, b)
+    }
   }
   for (let l in data.edgeLabels) {
     edgeLabels[l] = data.edgeLabels[l]

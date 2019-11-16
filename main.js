@@ -63,11 +63,11 @@ const addEdge = (a, b) => {
 }
 const deleteEdge = (a, b) => {
   const [low, high] = a < b ? [a, b] : [b, a]
-  edgeSet_.remove(`${low}:${high}`)
+  edgeSet_.delete(`${low}:${high}`)
   if (!neighbors_.has(a)) neighbors_.set(a, new Set)
   if (!neighbors_.has(b)) neighbors_.set(b, new Set)
-  neighbors_.get(a).remove(b)
-  neighbors_.get(b).remove(a)
+  neighbors_.get(a).delete(b)
+  neighbors_.get(b).delete(a)
 }
 const edgeLabels = {}
 let drawingPoints = true

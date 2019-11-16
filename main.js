@@ -62,7 +62,24 @@ map.onload = () => {
 }
 
 const points = {}
-const edges = new Set
+const edgeSet_ = new Set
+const neighbors_ = new Map
+const addEdge = (a, b) => {
+  const [low, high] = a < b ? [a, b] : [b, a]
+  edgeSet_.add(`${low}:${high}`)
+  if (!neighbors_.has(a)) neighbors_.set(a, new Set)
+  if (!neighbors_.has(b)) neighbors_.set(b, new Set)
+  neighbors_.get(a).add(b)
+  neighbors_.get(b).add(a)
+}
+const deleteEdge = (a, b) => {
+  const [low, high] = a < b ? [a, b] : [b, a]
+  edgeSet_.remove(`${low}:${high}`)
+  if (!neighbors_.has(a)) neighbors_.set(a, new Set)
+  if (!neighbors_.has(b)) neighbors_.set(b, new Set)
+  neighbors_.get(a).remove(b)
+  neighbors_.get(b).remove(a)
+}
 const edgeLabels = {}
 let drawingPoints = true
 
@@ -72,31 +89,25 @@ if ('data' in localStorage) {
     points[p] = data.points[p]
   }
   for (let e of data.edges) {
-    edges.add(e)
+    const [a, b] = e.split(':')
+    addEdge(a, b)
   }
   for (let l in data.edgeLabels) {
     edgeLabels[l] = data.edgeLabels[l]
   }
   setTimeout(draw, 0)
 }
-
-function edgesAt(pId) {
-  const es = []
-  edges.forEach(e => {
-    const [a, b] = e.split(":")
-    if (a === pId || b === pId) es.push(e)
+function changed() {
+  localStorage.data = JSON.stringify({
+    points,
+    edges: Array.from(edgeSet_.values()),
+    edgeLabels
   })
-  return es
 }
+
+
 function neighborNodes(nodeId) {
-  const ns = []
-  edges.forEach(e => {
-    const [a, b] = e.split(":")
-    if (a === nodeId || b === nodeId) {
-      ns.push(a === nodeId ? b : a)
-    }
-  })
-  return ns
+  return Array.from(neighbors_.get(nodeId)) || []
 }
 
 canvas.onclick = e => {
@@ -150,15 +161,13 @@ function nearestEdge(testX, testY) {
   const npId = nearestPoint(testX, testY)
   if (!npId) return
   const np = points[npId]
-  const es = edgesAt(npId)
+  const ns = neighborNodes(npId)
   const mdx = testX - np.x
   const mdy = testY - np.y
   const mouseAngle = Math.atan2(mdy, mdx)
   let minD = Infinity
   let closestEdge = null
-  es.forEach(e => {
-    const [a, b] = e.split(":")
-    const otherEndId = a === npId ? b : a
+  ns.forEach(otherEndId => {
     const otherEnd = points[otherEndId]
     const dy = otherEnd.y - np.y
     const dx = otherEnd.x - np.x
@@ -166,11 +175,11 @@ function nearestEdge(testX, testY) {
     const dAngle = clipToPi(mouseAngle - angle)
     if (Math.abs(dAngle) < minD) {
       minD = Math.abs(dAngle)
-      closestEdge = e
+      closestEdge = [npId, otherEndId]
     }
   })
   if (minD < Math.PI / 4) {
-    return closestEdge
+    return closestEdge.sort()
   }
 }
 
@@ -191,9 +200,7 @@ window.onkeydown = e => {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (connecting) {
       if (closestId && closestId !== connecting) {
-        const [lowId, highId] = closestId < connecting ? [closestId, connecting] : [connecting, closestId]
-        const edge = `${lowId}:${highId}`
-        edges.add(edge)
+        addEdge(closestId, connecting)
         changed()
         connecting = null
       }
@@ -205,7 +212,7 @@ window.onkeydown = e => {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
       delete points[closestId]
-      edgesAt(closestId).forEach(e => edges.delete(e))
+      neighborNodes(closestId).forEach(n => deleteEdge(closestId, n))
       delete edgeLabels[closestId]
       for (let pId in edgeLabels) {
         delete edgeLabels[pId][closestId]
@@ -287,7 +294,7 @@ window.onkeydown = e => {
     const np = nearestPoint(mousePos.x, mousePos.y)
     const ne = nearestEdge(mousePos.x, mousePos.y)
     if (np && ne) {
-      const [a, b] = ne.split(":")
+      const [a, b] = ne
       const other = a === np ? b : a
       if (!edgeLabels[np]) edgeLabels[np] = {}
       edgeLabels[np][other] = label
@@ -299,14 +306,6 @@ window.onkeydown = e => {
     e.preventDefault()
   }
   draw()
-}
-
-function changed() {
-  localStorage.data = JSON.stringify({
-    points,
-    edges: Array.from(edges.values()),
-    edgeLabels
-  })
 }
 
 function getNeighbors(p) {
@@ -326,21 +325,17 @@ function getNeighbors(p) {
     // destination node at different amounts of bonus.
     ns.push({node, dir, from, bonus: 0})
   }
-  edges.forEach(e => {
-    const [a, b] = e.split(":")
-    if (a === node || b === node) {
-      const other = a === node ? b : a
-      if (other === from) { return }
-      if (edgeLabels[other] && edgeLabels[other][node] === '0') {
-        return
-      }
-      if (!(node in edgeLabels) || edgeLabels[node][other] === dir) {
-        const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
-        const entryCost = points[other].type === 'burn' ? 1 : 0
-        const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0
-        const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
-        ns.push({node: other, dir, from: node, bonus: bonusAfterEntry})
-      }
+  neighborNodes(node).forEach(other => {
+    if (other === from) { return }
+    if (edgeLabels[other] && edgeLabels[other][node] === '0') {
+      return
+    }
+    if (!(node in edgeLabels) || edgeLabels[node][other] === dir) {
+      const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
+      const entryCost = points[other].type === 'burn' ? 1 : 0
+      const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0
+      const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
+      ns.push({node: other, dir, from: node, bonus: bonusAfterEntry})
     }
   })
   return ns
@@ -415,11 +410,11 @@ function draw() {
   const nearestToCursor = nearestPoint(mousePos.x, mousePos.y)
   if (drawingPoints) {
     const ce = nearestEdge(mousePos.x, mousePos.y)
-    edges.forEach(e => {
+    edgeSet_.forEach(e => {
       const [a, b] = e.split(":")
       const pa = points[a]
       const pb = points[b]
-      if (ce === e) {
+      if (ce && ce[0] === a && ce[1] === b) {
         ctx.strokeStyle = 'lightgreen'
       } else {
         ctx.strokeStyle = 'white'

@@ -61,6 +61,10 @@ const addEdge = (a, b) => {
   neighbors_.get(a).add(b)
   neighbors_.get(b).add(a)
 }
+const hasEdge = (a, b) => {
+  const [low, high] = a < b ? [a, b] : [b, a]
+  return edgeSet_.has(`${low}:${high}`)
+}
 const deleteEdge = (a, b) => {
   const [low, high] = a < b ? [a, b] : [b, a]
   edgeSet_.delete(`${low}:${high}`)
@@ -68,6 +72,13 @@ const deleteEdge = (a, b) => {
   if (!neighbors_.has(b)) neighbors_.set(b, new Set)
   neighbors_.get(a).delete(b)
   neighbors_.get(b).delete(a)
+
+  if (a in edgeLabels) {
+    delete edgeLabels[a][b]
+  }
+  if (b in edgeLabels) {
+    delete edgeLabels[b][a]
+  }
 }
 const edgeLabels = {}
 let drawingPoints = true
@@ -84,8 +95,15 @@ const loadData = (data) => {
       addEdge(a, b)
     }
   }
-  for (let l in data.edgeLabels) {
-    edgeLabels[l] = data.edgeLabels[l]
+  for (const l in data.edgeLabels) {
+    if (l in points) {
+      edgeLabels[l] = data.edgeLabels[l]
+      for (const l2 in edgeLabels[l]) {
+        if (!(l2 in points) || !hasEdge(l, l2)) {
+          delete edgeLabels[l][l2]
+        }
+      }
+    }
   }
   setTimeout(draw, 0)
 }
@@ -198,7 +216,10 @@ window.onkeydown = e => {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (connecting) {
       if (closestId && closestId !== connecting) {
-        addEdge(closestId, connecting)
+        if (hasEdge(closestId, connecting))
+          deleteEdge(closestId, connecting)
+        else
+          addEdge(closestId, connecting)
         changed()
         connecting = null
       }
@@ -206,15 +227,18 @@ window.onkeydown = e => {
       if (closestId) connecting = closestId
     }
   }
+  if (e.code === 'KeyM') {
+    const closestId = nearestPoint(mousePos.x, mousePos.y)
+    if (closestId) {
+      points[closestId].x = mousePos.x
+      points[closestId].y = mousePos.y
+    }
+  }
   if (e.code === 'KeyX') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
       delete points[closestId]
       neighborNodes(closestId).forEach(n => deleteEdge(closestId, n))
-      delete edgeLabels[closestId]
-      for (let pId in edgeLabels) {
-        delete edgeLabels[pId][closestId]
-      }
       changed()
     }
   }

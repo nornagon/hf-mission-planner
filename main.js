@@ -319,6 +319,10 @@ window.onkeydown = e => {
 
 function getNeighbors(p) {
   const {node, dir, from, bonus} = p
+  if (points[node].type === 'site' && from != null) {
+    // You can't exit a site once you enter it.
+    return []
+  }
   const ns = []
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {

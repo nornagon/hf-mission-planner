@@ -235,7 +235,18 @@ window.onkeydown = e => {
   if (e.code === 'KeyB') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'burn'
+      const p = points[closestId]
+      if (p.type === 'burn') {
+        if (p.landing == null) {
+          p.landing = 1
+        } else if (p.landing === 1) {
+          p.landing = 0.5
+        } else {
+          delete p.landing
+        }
+      } else {
+        p.type = 'burn'
+      }
       changed()
     }
   }
@@ -358,7 +369,7 @@ function weight(u, v) {
   const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
   if (points[vId].type === 'burn') {
-    return bonus > 0 ? 0 : 1
+    return bonus > 0 && !points[vId].landing ? 0 : 1
   } else if (points[vId].type === 'hohmann') {
     return uId === vId && uDir != null && vDir != null && uDir !== vDir ? 2 : 0;
   } else if (points[vId].type === 'flyby') {
@@ -461,6 +472,8 @@ function draw() {
         }
         ctx.closePath()
         ctx.restore()
+      } else if (p.type === 'burn' && p.landing) {
+        ctx.rect(p.x * width - r, p.y * height - r, r * 2 * p.landing, r * 2)
       } else {
         ctx.arc(p.x * width, p.y * height, r, 0, Math.PI*2)
       }

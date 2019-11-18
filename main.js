@@ -233,6 +233,7 @@ window.onkeydown = e => {
     if (closestId) {
       points[closestId].x = mousePos.x
       points[closestId].y = mousePos.y
+      changed()
     }
   }
   if (e.code === 'KeyX') {

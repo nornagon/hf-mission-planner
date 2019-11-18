@@ -1,4 +1,4 @@
-function dijkstra(getNeighbors, weight, id, source) {
+function dijkstra(getNeighbors, weight, id, source, allowed) {
   const distance = {}
   const previous = {}
   distance[id(source)] = 0
@@ -11,6 +11,7 @@ function dijkstra(getNeighbors, weight, id, source) {
     inQ.delete(idu)
 
     for (const v of getNeighbors(u)) {
+      if (!allowed(u, v, id, previous)) continue
       const idv = id(v)
       const dv = idv in distance ? distance[idv] : Infinity
       const wuv = weight(u, v)
@@ -344,26 +345,41 @@ window.onkeydown = e => {
     const pId = nearestPoint(mousePos.x, mousePos.y)
     if (pId) {
       const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
-      const from = {node: pId, dir: null}
-      debugPathfinding = dijkstra(getNeighbors, weight, id, from)
+      const source = {node: pId, dir: null}
+      debugPathfinding = dijkstra(getNeighbors, weight, id, source, allowed)
       draw()
     }
   }
   draw()
 }
 
-function getNeighbors(p) {
-  const {node, dir, from, bonus} = p
-  if (points[node].type === 'site' && from != null) {
-    // You can't exit a site once you enter it.
-    return []
+function allowed(u, v, id, previous) {
+  const {node: uId} = u
+  const {node: vId} = v
+  if ((id(u) in previous) && points[u.node].type === 'site') {
+    console.log('here')
+    return false
   }
+  // look back through |previous| starting from |v| to see if [u,v] has already
+  // been traversed.
+  let n = u
+  let p
+  while (p = previous[id(n)]) {
+    if ((n.node === uId && p.node === vId) || (n.node === vId && p.node === uId))
+      return false
+    n = p
+  }
+  return true
+}
+
+function getNeighbors(p) {
+  const {node, dir, bonus} = p
   const ns = []
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
       if (edgeLabels[node][otherNode] !== dir) {
         const bonusAfterDirectionChangeBurn = Math.max(bonus - 2, 0)
-        ns.push({node, dir: edgeLabels[node][otherNode], from: null, bonus: bonusAfterDirectionChangeBurn})
+        ns.push({node, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
       }
     })
   }
@@ -371,10 +387,9 @@ function getNeighbors(p) {
     // you can always throw away your extra burns if you want.
     // this also allows the path finder to not have to search for the
     // destination node at different amounts of bonus.
-    ns.push({node, dir, from, bonus: 0})
+    ns.push({node, dir, bonus: 0})
   }
   neighborNodes(node).forEach(other => {
-    if (other === from) { return }
     if (edgeLabels[other] && edgeLabels[other][node] === '0') {
       return
     }
@@ -383,7 +398,7 @@ function getNeighbors(p) {
       const entryCost = points[other].type === 'burn' ? 1 : 0
       const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0
       const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
-      ns.push({node: other, dir, from: node, bonus: bonusAfterEntry})
+      ns.push({node: other, dir, bonus: bonusAfterEntry})
     }
   })
   return ns
@@ -395,7 +410,7 @@ function weight(u, v) {
   if (points[vId].type === 'burn') {
     return bonus > 0 && !points[vId].landing ? 0 : 1
   } else if (points[vId].type === 'hohmann') {
-    return uId === vId && uDir != null && vDir != null && uDir !== vDir ? 2 : 0;
+    return uId === vId && uDir != null && vDir != null && uDir !== vDir ? Math.max(0, 2 - bonus) : 0;
   } else if (points[vId].type === 'flyby') {
     return 0
   } else {
@@ -409,16 +424,23 @@ function findPath(fromId, toId) {
   // each direction. Moving into either node is
   // free, but switching from one to the other
   // costs 2 burns (or a turn).
+  //  .
+  //   `-.         ,-'
+  //      `-O.  ,-'
+  //      2 | `-.
+  //       ,O'   `-.
+  //    ,-'         `-
+  // .-'
   // point: {node: string; dir: string?, id: string}
-  const id = p => p.dir != null || p.from != null || p.bonus ? `${p.node}@${p.dir}@${p.from}@${p.bonus}` : p.node
-  const from = {node: fromId, dir: null, from: null, bonus: 0}
-  const {distance, previous} = dijkstra(getNeighbors, weight, id, from)
+  const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
+  const source = {node: fromId, dir: null, bonus: 0}
+  const {distance, previous} = dijkstra(getNeighbors, weight, id, source, allowed)
 
-  let shorterTo = {node: toId, dir: null, from: null, bonus: 0}
+  let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
   neighborNodes(toId).forEach(n => {
     const l = toId in edgeLabels ? edgeLabels[toId][n] : null
-    const testP = {node: toId, dir: l, from: n, bonus: 0}
+    const testP = {node: toId, dir: l, bonus: 0}
     const testId = id(testP)
     if (testId in distance && (!(shorterToId in distance) || distance[testId] < distance[shorterToId])) {
       shorterToId = testId
@@ -429,7 +451,7 @@ function findPath(fromId, toId) {
   if (shorterToId in distance) {
     const path = [shorterTo]
     let cur = shorterTo
-    while (id(cur) !== id(from)) {
+    while (id(cur) !== id(source)) {
       const n = previous[id(cur)]
       path.unshift(n)
       cur = n

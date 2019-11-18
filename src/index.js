@@ -1,3 +1,8 @@
+import './index.css'
+import HFMap from '../assets/hf.png'
+import HF4Map from '../assets/hf4.png'
+import Heap from 'closure-heap'
+
 function dijkstra(getNeighbors, weight, id, source, allowed) {
   const distance = {}
   const previous = {}
@@ -40,7 +45,7 @@ function dijkstra(getNeighbors, weight, id, source, allowed) {
 
 
 const map = new Image
-map.src = "hf.png"
+map.src = HF4Map
 main.appendChild(map)
 
 const canvas = document.createElement('canvas')
@@ -112,7 +117,7 @@ const loadData = (data) => {
 if ('data' in localStorage) {
   loadData(JSON.parse(localStorage.data))
 } else if (location.protocol !== 'file:') {
-  fetch('data.json').then(r => r.json()).then(loadData)
+  import('../assets/data-hf4.json').then(({default: data}) => loadData(data))
 }
 function changed() {
   localStorage.data = JSON.stringify({

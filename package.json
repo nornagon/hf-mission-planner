@@ -1,0 +1,27 @@
+{
+  "name": "hf-mission-planner",
+  "private": true,
+  "version": "0.1.0",
+  "description": "High Frontier Mission Planner",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nornagon/hf-mission-planner.git"
+  },
+  "author": "Jeremy Apthorp <nornagon@nornagon.net>",
+  "license": "AGPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/nornagon/hf-mission-planner/issues"
+  },
+  "homepage": "https://github.com/nornagon/hf-mission-planner#readme",
+  "dependencies": {
+    "closure-heap": "^1.0.0"
+  },
+  "devDependencies": {
+    "css-loader": "^3.2.0",
+    "file-loader": "^4.2.0",
+    "style-loader": "^1.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  }
+}

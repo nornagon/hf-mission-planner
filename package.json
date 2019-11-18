@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "description": "High Frontier Mission Planner",
-  "scripts": {},
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -w"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/nornagon/hf-mission-planner.git"
@@ -15,7 +18,9 @@
   },
   "homepage": "https://github.com/nornagon/hf-mission-planner#readme",
   "dependencies": {
-    "closure-heap": "^1.0.0"
+    "closure-heap": "^1.0.0",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
   },
   "devDependencies": {
     "css-loader": "^3.2.0",

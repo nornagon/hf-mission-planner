@@ -1,4 +1,6 @@
 import Heap from 'closure-heap'
+import ReactDOM from 'react-dom'
+import React from 'react'
 
 import './index.css'
 import HFMap from '../assets/hf.png'
@@ -14,6 +16,10 @@ map.onload = () => {
   canvas.width = map.width
   canvas.height = map.height
   main.appendChild(canvas)
+  const overlay = document.createElement('div')
+  overlay.setAttribute('id', 'overlay')
+  main.appendChild(overlay)
+  ReactDOM.render(React.createElement('div', {style: {color: 'white'}}, 'hi'), overlay)
   draw()
 }
 
@@ -80,6 +86,7 @@ if ('data' in localStorage) {
 } else if (location.protocol !== 'file:') {
   import('../assets/data-hf4.json').then(({default: data}) => loadData(data))
 }
+
 function changed() {
   localStorage.data = JSON.stringify({
     points,

@@ -5,20 +5,20 @@ import './index.css'
 import HFMap from '../assets/hf.png'
 import HF4Map from '../assets/hf4.png'
 import { dijkstra } from './dijkstra'
+import { PathInfo } from './PathInfo'
 
 const map = new Image
 map.src = HF4Map
 main.appendChild(map)
 
 const canvas = document.createElement('canvas')
+const overlay = document.createElement('div')
+overlay.setAttribute('id', 'overlay')
 map.onload = () => {
   canvas.width = map.width
   canvas.height = map.height
   main.appendChild(canvas)
-  const overlay = document.createElement('div')
-  overlay.setAttribute('id', 'overlay')
   main.appendChild(overlay)
-  ReactDOM.render(React.createElement('div', {style: {color: 'white'}}, 'hi'), overlay)
   draw()
 }
 
@@ -330,7 +330,6 @@ function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
   if ((id(u) in previous) && points[u.node].type === 'site') {
-    console.log('here')
     return false
   }
   // look back through |previous| starting from |v| to see if [u,v] has already
@@ -572,4 +571,12 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
+  ReactDOM.render(React.createElement(PathInfo, {points, path: highlightedPath, weight}), overlay, () => {
+    // Work around a Chrome bug that prevents the overlay layer from being
+    // painted. Fixed in Chrome 80, maybe 79
+    window.scroll(scrollX, scrollY + 1)
+    window.scroll(scrollX, scrollY - 1)
+    // TODO: ugh, this breaks when you're zoomed and scrolls the page up on
+    // every redraw :siiiigh:
+  })
 }

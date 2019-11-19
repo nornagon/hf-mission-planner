@@ -1,4 +1,3 @@
-import Heap from 'closure-heap'
 import ReactDOM from 'react-dom'
 import React from 'react'
 

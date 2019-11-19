@@ -1,3 +1,5 @@
+import Heap from 'closure-heap'
+
 export function dijkstra(getNeighbors, weight, id, source, allowed) {
   const distance = {}
   const previous = {}

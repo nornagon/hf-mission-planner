@@ -5,7 +5,7 @@
   "description": "High Frontier Mission Planner",
   "scripts": {
     "build": "webpack",
-    "watch": "webpack -w"
+    "start:dev": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
@@ -27,6 +27,7 @@
     "file-loader": "^4.2.0",
     "style-loader": "^1.0.0",
     "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
   }
 }

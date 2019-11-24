@@ -7,7 +7,6 @@ const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 export function PathInfo({path, weight, points}) {
   if (!path) return null
   else {
-    console.log(path)
     let burns = 0
     let hazards = 0
     for (let i = 1; i < path.length; i++) {
@@ -19,6 +18,6 @@ export function PathInfo({path, weight, points}) {
         hazards += points[path[i].node].hazard ? 1 : 0
       }
     }
-    return e('div', {style: {color: 'red', height: 100}}, `${pl(burns, 'burn', 'burns')}, ${pl(hazards, 'hazard', 'hazards')}`)
+    return e('div', {className: 'PathInfo'}, `${pl(burns, 'burn', 'burns')}, ${pl(hazards, 'hazard', 'hazards')}`)
   }
 }

@@ -6,6 +6,7 @@ import HFMap from '../assets/hf.png'
 import HF4Map from '../assets/hf4.png'
 import { dijkstra } from './dijkstra'
 import { PathInfo } from './PathInfo'
+import { MapData } from './MapData'
 
 const map = new Image
 map.src = HF4Map
@@ -22,61 +23,11 @@ map.onload = () => {
   draw()
 }
 
-const points = {}
-const edgeSet_ = new Set
-const neighbors_ = new Map
-const addEdge = (a, b) => {
-  const [low, high] = a < b ? [a, b] : [b, a]
-  edgeSet_.add(`${low}:${high}`)
-  if (!neighbors_.has(a)) neighbors_.set(a, new Set)
-  if (!neighbors_.has(b)) neighbors_.set(b, new Set)
-  neighbors_.get(a).add(b)
-  neighbors_.get(b).add(a)
-}
-const hasEdge = (a, b) => {
-  const [low, high] = a < b ? [a, b] : [b, a]
-  return edgeSet_.has(`${low}:${high}`)
-}
-const deleteEdge = (a, b) => {
-  const [low, high] = a < b ? [a, b] : [b, a]
-  edgeSet_.delete(`${low}:${high}`)
-  if (!neighbors_.has(a)) neighbors_.set(a, new Set)
-  if (!neighbors_.has(b)) neighbors_.set(b, new Set)
-  neighbors_.get(a).delete(b)
-  neighbors_.get(b).delete(a)
-
-  if (a in edgeLabels) {
-    delete edgeLabels[a][b]
-  }
-  if (b in edgeLabels) {
-    delete edgeLabels[b][a]
-  }
-}
-const edgeLabels = {}
 let drawingPoints = true
+let mapData = null
 
-const loadData = (data) => {
-  for (let p in data.points) {
-    points[p] = data.points[p]
-  }
-  for (let e of data.edges) {
-    const [a, b] = e.split(':')
-    if (!((a in points) && (b in points))) {
-      console.warn(`removing dead edge: ${e}`)
-    } else {
-      addEdge(a, b)
-    }
-  }
-  for (const l in data.edgeLabels) {
-    if (l in points) {
-      edgeLabels[l] = data.edgeLabels[l]
-      for (const l2 in edgeLabels[l]) {
-        if (!(l2 in points) || !hasEdge(l, l2)) {
-          delete edgeLabels[l][l2]
-        }
-      }
-    }
-  }
+const loadData = (json) => {
+  mapData = MapData.fromJSON(json)
   setTimeout(draw, 0)
 }
 
@@ -87,16 +38,7 @@ if ('data' in localStorage) {
 }
 
 function changed() {
-  localStorage.data = JSON.stringify({
-    points,
-    edges: Array.from(edgeSet_.values()),
-    edgeLabels
-  })
-}
-
-
-function neighborNodes(nodeId) {
-  return Array.from(neighbors_.get(nodeId) || [])
+  localStorage.data = JSON.stringify(mapData.toJSON())
 }
 
 canvas.onclick = e => {
@@ -105,11 +47,11 @@ canvas.onclick = e => {
   const xPct = x / canvas.width
   const yPct = y / canvas.height
   const pointId = Math.random().toString()
-  points[pointId] = {
+  mapData.addPoint(pointId, {
     x: xPct,
     y: yPct,
     type: 'hohmann',
-  }
+  })
   draw()
 }
 
@@ -123,8 +65,8 @@ canvas.onmousemove = e => {
 function nearestPoint(testX, testY) {
   let closest = null
   let dist = Infinity
-  for (let pId in points) {
-    const {x, y} = points[pId]
+  for (let pId in mapData.points) {
+    const {x, y} = mapData.points[pId]
     const dx = x - testX
     const dy = y - testY
     const testDist = Math.sqrt(dx*dx + dy*dy)
@@ -149,15 +91,15 @@ function clipToPi(a) {
 function nearestEdge(testX, testY) {
   const npId = nearestPoint(testX, testY)
   if (!npId) return
-  const np = points[npId]
-  const ns = neighborNodes(npId)
+  const np = mapData.points[npId]
+  const ns = mapData.neighborsOf(npId)
   const mdx = testX - np.x
   const mdy = testY - np.y
   const mouseAngle = Math.atan2(mdy, mdx)
   let minD = Infinity
   let closestEdge = null
   ns.forEach(otherEndId => {
-    const otherEnd = points[otherEndId]
+    const otherEnd = mapData.points[otherEndId]
     const dy = otherEnd.y - np.y
     const dx = otherEnd.x - np.x
     const angle = Math.atan2(dy, dx)
@@ -189,10 +131,10 @@ window.onkeydown = e => {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (connecting) {
       if (closestId && closestId !== connecting) {
-        if (hasEdge(closestId, connecting))
-          deleteEdge(closestId, connecting)
+        if (mapData.hasEdge(closestId, connecting))
+          mapData.deleteEdge(closestId, connecting)
         else
-          addEdge(closestId, connecting)
+          mapData.addEdge(closestId, connecting)
         changed()
         connecting = null
       }
@@ -203,37 +145,36 @@ window.onkeydown = e => {
   if (e.code === 'KeyM') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].x = mousePos.x
-      points[closestId].y = mousePos.y
+      mapData.points[closestId].x = mousePos.x
+      mapData.points[closestId].y = mousePos.y
       changed()
     }
   }
   if (e.code === 'KeyX') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      delete points[closestId]
-      neighborNodes(closestId).forEach(n => deleteEdge(closestId, n))
+      mapData.deletePoint(closestId)
       changed()
     }
   }
   if (e.code === 'KeyH') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'hohmann'
+      mapData.points[closestId].type = 'hohmann'
       changed()
     }
   }
   if (e.code === 'KeyL') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'lagrange'
+      mapData.points[closestId].type = 'lagrange'
       changed()
     }
   }
   if (e.code === 'KeyB') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      const p = points[closestId]
+      const p = mapData.points[closestId]
       if (p.type === 'burn') {
         if (p.landing == null) {
           p.landing = 1
@@ -251,37 +192,37 @@ window.onkeydown = e => {
   if (e.code === 'KeyD') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'decorative'
+      mapData.points[closestId].type = 'decorative'
       changed()
     }
   }
   if (e.code === 'KeyR') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'radhaz'
+      mapData.points[closestId].type = 'radhaz'
       changed()
     }
   }
   if (e.code === 'KeyZ') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].hazard = !points[closestId].hazard
+      mapData.points[closestId].hazard = !mapData.points[closestId].hazard
       changed()
     }
   }
   if (e.code === 'KeyY') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'flyby'
-      points[closestId].flybyBoost = ((points[closestId].flybyBoost || 0) % 4) + 1
+      mapData.points[closestId].type = 'flyby'
+      mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
       changed()
     }
   }
   if (e.code === 'KeyS') {
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (closestId) {
-      points[closestId].type = 'site'
-      points[closestId].siteName = prompt("Site name")
+      mapData.points[closestId].type = 'site'
+      mapData.points[closestId].siteName = prompt("Site name", mapData.points[closestId].siteName)
       changed()
     }
   }
@@ -305,8 +246,7 @@ window.onkeydown = e => {
     if (np && ne) {
       const [a, b] = ne
       const other = a === np ? b : a
-      if (!edgeLabels[np]) edgeLabels[np] = {}
-      edgeLabels[np][other] = label
+      mapData.setEdgeLabel(np, other, label)
       changed()
     }
   }
@@ -329,7 +269,8 @@ window.onkeydown = e => {
 function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
-  if ((id(u) in previous) && points[u.node].type === 'site') {
+  if ((id(u) in previous) && mapData.points[u.node].type === 'site') {
+    // Once you enter a site, your turn ends.
     return false
   }
   // look back through |previous| starting from |v| to see if [u,v] has already
@@ -347,6 +288,7 @@ function allowed(u, v, id, previous) {
 function getNeighbors(p) {
   const {node, dir, bonus} = p
   const ns = []
+  const { edgeLabels, points } = mapData
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
       if (edgeLabels[node][otherNode] !== dir) {
@@ -361,7 +303,7 @@ function getNeighbors(p) {
     // destination node at different amounts of bonus.
     ns.push({node, dir, bonus: 0})
   }
-  neighborNodes(node).forEach(other => {
+  mapData.neighborsOf(node).forEach(other => {
     if (edgeLabels[other] && edgeLabels[other][node] === '0') {
       return
     }
@@ -379,6 +321,7 @@ function getNeighbors(p) {
 function weight(u, v) {
   const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
+  const { points } = mapData
   if (points[vId].type === 'burn') {
     return bonus > 0 && !points[vId].landing ? 0 : 1
   } else if (points[vId].type === 'hohmann') {
@@ -410,7 +353,8 @@ function findPath(fromId, toId) {
 
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
-  neighborNodes(toId).forEach(n => {
+  const { edgeLabels } = mapData
+  mapData.neighborsOf(toId).forEach(n => {
     const l = toId in edgeLabels ? edgeLabels[toId][n] : null
     const testP = {node: toId, dir: l, bonus: 0}
     const testId = id(testP)
@@ -440,7 +384,8 @@ function draw() {
   const nearestToCursor = nearestPoint(mousePos.x, mousePos.y)
   if (drawingPoints) {
     const ce = nearestEdge(mousePos.x, mousePos.y)
-    edgeSet_.forEach(e => {
+    const { points, edges, edgeLabels } = mapData
+    edges.forEach(e => {
       const [a, b] = e.split(":")
       const pa = points[a]
       const pb = points[b]
@@ -561,17 +506,17 @@ function draw() {
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.strokeStyle = 'rgba(255,0,0,0.5)'
-    const p0 = points[highlightedPath[0].node]
+    const p0 = mapData.points[highlightedPath[0].node]
     ctx.beginPath()
     ctx.moveTo(p0.x * width, p0.y * height)
     for (let p of highlightedPath.slice(1)) {
-      const point = points[p.node]
+      const point = mapData.points[p.node]
       ctx.lineTo(point.x * width, point.y * height)
     }
     ctx.stroke()
     ctx.restore()
   }
-  ReactDOM.render(React.createElement(PathInfo, {points, path: highlightedPath, weight}), overlay, () => {
+  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay, () => {
     // Work around a Chrome bug that prevents the overlay layer from being
     // painted. Fixed in Chrome 80, maybe 79
     window.scroll(scrollX, scrollY + 1)

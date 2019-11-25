@@ -530,11 +530,5 @@ function draw() {
     ctx.restore()
   }
   ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay, () => {
-    // Work around a Chrome bug that prevents the overlay layer from being
-    // painted. Fixed in Chrome 80, maybe 79
-    window.scroll(scrollX, scrollY + 1)
-    window.scroll(scrollX, scrollY - 1)
-    // TODO: ugh, this breaks when you're zoomed and scrolls the page up on
-    // every redraw :siiiigh:
   })
 }

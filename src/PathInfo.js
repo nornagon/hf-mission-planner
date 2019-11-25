@@ -1,10 +1,21 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 const e = React.createElement
 
 const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
 export function PathInfo({path, weight, points}) {
+  const ref = useRef()
+  useEffect(() => {
+    // Work around a Chrome bug that prevents the overlay layer from being
+    // painted. Fixed in Chrome 80, maybe 79
+    if (path) {
+      ref.current.parentElement.style.width = 0
+      setTimeout(() => {
+        ref.current.parentElement.style.width = null
+      })
+    }
+  }, [!!path])
   if (!path) return null
   else {
     let burns = 0
@@ -18,7 +29,7 @@ export function PathInfo({path, weight, points}) {
         hazards += points[path[i].node].hazard ? 1 : 0
       }
     }
-    return e('div', {className: 'PathInfo'},
+    return e('div', {className: 'PathInfo', ref},
       e('div', {}, `${pl(burns, 'burn', 'burns')}`),
       e('div', {}, `${pl(hazards, 'hazard', 'hazards')}`)
     )

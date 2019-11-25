@@ -1,5 +1,7 @@
 import ReactDOM from 'react-dom'
 import React from 'react'
+import { zoom } from 'd3-zoom'
+import { select, event } from 'd3-selection'
 
 import './index.css'
 import HFMap from '../assets/hf.png'
@@ -19,8 +21,18 @@ map.onload = () => {
   canvas.width = map.width
   canvas.height = map.height
   main.appendChild(canvas)
-  main.appendChild(overlay)
+  document.body.appendChild(overlay)
+  const z = zoom()
+    .scaleExtent([0.2, 1.5])
+    .translateExtent([[0,0],[map.width,map.height]])
+    .on("zoom", () => zoomed(event.transform))
+  select(document.documentElement).call(z).call(z.translateTo, 4600, 2900)
   draw()
+}
+
+function zoomed({x, y, k}) {
+  main.style.transform = `translate(${x}px,${y}px) scale(${k})`
+  main.style.transformOrigin = '0 0'
 }
 
 let drawingPoints = true
@@ -377,6 +389,7 @@ function findPath(fromId, toId) {
 }
 
 function draw() {
+  if (!mapData) return
   const ctx = canvas.getContext('2d')
   const {width, height} = ctx.canvas
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)

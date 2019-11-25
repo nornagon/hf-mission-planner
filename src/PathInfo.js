@@ -18,6 +18,9 @@ export function PathInfo({path, weight, points}) {
         hazards += points[path[i].node].hazard ? 1 : 0
       }
     }
-    return e('div', {className: 'PathInfo'}, `${pl(burns, 'burn', 'burns')}, ${pl(hazards, 'hazard', 'hazards')}`)
+    return e('div', {className: 'PathInfo'},
+      e('div', {}, `${pl(burns, 'burn', 'burns')}`),
+      e('div', {}, `${pl(hazards, 'hazard', 'hazards')}`)
+    )
   }
 }

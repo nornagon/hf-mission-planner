@@ -309,7 +309,7 @@ function getNeighbors(p) {
   const { edgeLabels, points } = mapData
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
-      if (edgeLabels[node][otherNode] !== dir) {
+      if (edgeLabels[node][otherNode] !== dir && edgeLabels[node][otherNode] !== '0') {
         const bonusAfterDirectionChangeBurn = Math.max(bonus - 2, 0)
         ns.push({node, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
       }

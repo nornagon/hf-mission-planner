@@ -1,11 +1,11 @@
-import Heap from 'closure-heap'
+import Heap from './heap'
 
-export function dijkstra(getNeighbors, weight, id, source, allowed) {
+export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source, allowed) {
   const distance = {}
   const previous = {}
-  distance[id(source)] = 0
-  const q = new Heap()
-  q.insert(0, source)
+  distance[id(source)] = zero
+  const q = new Heap(null, lessThan)
+  q.insert(zero, source)
   const inQ = new Set([id(source)])
   while (!q.isEmpty()) {
     const u = q.remove()
@@ -15,11 +15,10 @@ export function dijkstra(getNeighbors, weight, id, source, allowed) {
     for (const v of getNeighbors(u)) {
       if (!allowed(u, v, id, previous)) continue
       const idv = id(v)
-      const dv = idv in distance ? distance[idv] : Infinity
+      const dv = distance[idv]
       const wuv = weight(u, v)
-      if (wuv < 0) throw new Error('negative weights not allowed')
-      const alt = distance[idu] + wuv
-      if (alt < dv) {
+      const alt = add(distance[idu], wuv)
+      if (dv === undefined || lessThan(alt, dv)) {
         distance[idv] = alt
         previous[idv] = u
         if (inQ.has(idv)) {

@@ -336,6 +336,12 @@ function getNeighbors(p) {
   return ns
 }
 
+const ints = {
+  zero: 0,
+  add: (a, b) => a + b,
+  lessThan: (a, b) => a < b
+}
+
 function weight(u, v) {
   const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
@@ -367,7 +373,7 @@ function findPath(fromId, toId) {
   // point: {node: string; dir: string?, id: string}
   const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
-  const {distance, previous} = dijkstra(getNeighbors, weight, id, source, allowed)
+  const {distance, previous} = dijkstra(getNeighbors, weight, ints, id, source, allowed)
 
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)

@@ -276,7 +276,7 @@ window.onkeydown = e => {
     const pId = nearestPoint(mousePos.x, mousePos.y)
     if (pId) {
       const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
-      const source = {node: pId, dir: null}
+      const source = {node: pId, dir: null, bonus: 0}
       debugPathfinding = dijkstra(getNeighbors, burnWeight, ints, id, source, allowed)
       draw()
     }
@@ -287,6 +287,7 @@ window.onkeydown = e => {
 function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
+  if (uId === vId) return true
   if ((id(u) in previous) && mapData.points[u.node].type === 'site') {
     // Once you enter a site, your turn ends.
     return false
@@ -309,8 +310,9 @@ function getNeighbors(p) {
   const { edgeLabels, points } = mapData
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
-      if (edgeLabels[node][otherNode] !== dir && edgeLabels[node][otherNode] !== '0') {
-        const bonusAfterDirectionChangeBurn = Math.max(bonus - 2, 0)
+      if (edgeLabels[node][otherNode] !== dir) {
+        const directionChangeCost = edgeLabels[node][otherNode] === '0' ? 0 : 2
+        const bonusAfterDirectionChangeBurn = Math.max(bonus - directionChangeCost, 0)
         ns.push({node, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
       }
     })
@@ -368,6 +370,17 @@ function burnWeight(u, v) {
   }
 }
 
+function turnWeight(u, v) {
+  const {node: uId, dir: uDir, bonus} = u
+  const {node: vId, dir: vDir} = v
+  const { points } = mapData
+  if (points[vId].type === 'hohmann') {
+    if (uId === vId && uDir != null && vDir == null) return 1
+    return 0
+  }
+  return 0
+}
+
 function hazardWeight(u, v) {
   const { node: uId } = u
   const { node: vId } = v
@@ -383,7 +396,7 @@ function hazardWeight(u, v) {
 
 function burnsTurnsHazards(u, v) {
   const burns = burnWeight(u, v)
-  const turns = 0 // Assuming infinite thrust...
+  const turns = turnWeight(u, v) // Assuming infinite thrust and no waiting...
   const hazards = hazardWeight(u, v)
   return [burns, turns, hazards]
 }

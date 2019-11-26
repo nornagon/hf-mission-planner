@@ -277,7 +277,7 @@ window.onkeydown = e => {
     if (pId) {
       const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
       const source = {node: pId, dir: null}
-      debugPathfinding = dijkstra(getNeighbors, weight, id, source, allowed)
+      debugPathfinding = dijkstra(getNeighbors, burnWeight, ints, id, source, allowed)
       draw()
     }
   }
@@ -342,7 +342,18 @@ const ints = {
   lessThan: (a, b) => a < b
 }
 
-function weight(u, v) {
+const tuple3s = {
+  zero: [0, 0, 0],
+  add: ([a, b, c], [x, y, z]) => [a + x, b + y, c + z],
+  lessThan: ([a,b,c], [x,y,z]) => {
+    return (
+      a < x || (a === x && (
+        b < y || (b === y) && (
+          c < z))))
+  }
+}
+
+function burnWeight(u, v) {
   const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
   const { points } = mapData
@@ -355,6 +366,26 @@ function weight(u, v) {
   } else {
     return 0
   }
+}
+
+function hazardWeight(u, v) {
+  const { node: uId } = u
+  const { node: vId } = v
+  if (uId === vId) return 0
+  const { points } = mapData
+  if (points[vId].hazard)
+    return 1
+  if (points[vId].type === 'radhaz') {
+    return 0.1 // eh, close enough
+  }
+  return 0
+}
+
+function burnsTurnsHazards(u, v) {
+  const burns = burnWeight(u, v)
+  const turns = 0 // Assuming infinite thrust...
+  const hazards = hazardWeight(u, v)
+  return [burns, turns, hazards]
 }
 
 function findPath(fromId, toId) {
@@ -373,7 +404,7 @@ function findPath(fromId, toId) {
   // point: {node: string; dir: string?, id: string}
   const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
-  const {distance, previous} = dijkstra(getNeighbors, weight, ints, id, source, allowed)
+  const {distance, previous} = dijkstra(getNeighbors, burnsTurnsHazards, tuple3s, id, source, allowed)
 
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
@@ -382,7 +413,7 @@ function findPath(fromId, toId) {
     const l = toId in edgeLabels ? edgeLabels[toId][n] : null
     const testP = {node: toId, dir: l, bonus: 0}
     const testId = id(testP)
-    if (testId in distance && (!(shorterToId in distance) || distance[testId] < distance[shorterToId])) {
+    if (testId in distance && (!(shorterToId in distance) || tuple3s.lessThan(distance[testId], distance[shorterToId]))) {
       shorterToId = testId
       shorterTo = testP
     }
@@ -541,5 +572,5 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
-  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay)
+  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight: burnWeight}), overlay)
 }

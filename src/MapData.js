@@ -42,11 +42,11 @@ export class MapData {
     this._neighbors.get(a).delete(b)
     this._neighbors.get(b).delete(a)
   
-    if (a in edgeLabels) {
-      delete edgeLabels[a][b]
+    if (a in this._edgeLabels) {
+      delete this._edgeLabels[a][b]
     }
-    if (b in edgeLabels) {
-      delete edgeLabels[b][a]
+    if (b in this._edgeLabels) {
+      delete this._edgeLabels[b][a]
     }
   }
 

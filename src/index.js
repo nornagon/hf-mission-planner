@@ -315,11 +315,11 @@ function getNeighbors(p) {
       }
     })
   }
-  if (bonus) {
+  if (bonus > 0 || dir != null) {
     // you can always throw away your extra burns if you want.
     // this also allows the path finder to not have to search for the
     // destination node at different amounts of bonus.
-    ns.push({node, dir, bonus: 0})
+    ns.push({node, dir: null, bonus: 0})
   }
   mapData.neighborsOf(node).forEach(other => {
     if (edgeLabels[other] && edgeLabels[other][node] === '0') {
@@ -408,16 +408,6 @@ function findPath(fromId, toId) {
 
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
-  const { edgeLabels } = mapData
-  mapData.neighborsOf(toId).forEach(n => {
-    const l = toId in edgeLabels ? edgeLabels[toId][n] : null
-    const testP = {node: toId, dir: l, bonus: 0}
-    const testId = id(testP)
-    if (testId in distance && (!(shorterToId in distance) || tuple3s.lessThan(distance[testId], distance[shorterToId]))) {
-      shorterToId = testId
-      shorterTo = testP
-    }
-  })
 
   if (shorterToId in distance) {
     const path = [shorterTo]

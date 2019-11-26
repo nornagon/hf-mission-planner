@@ -54,6 +54,9 @@ function changed() {
 }
 
 canvas.onclick = e => {
+  if (!drawingPoints) {
+    return
+  }
   const x = e.offsetX
   const y = e.offsetY
   const xPct = x / canvas.width
@@ -138,107 +141,125 @@ window.onkeydown = e => {
     highlightedPath = null
     debugPathfinding = null
   }
-  if (e.code === 'KeyA') {
-    // find nearest point to cursor
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (connecting) {
-      if (closestId && closestId !== connecting) {
-        if (mapData.hasEdge(closestId, connecting))
-          mapData.deleteEdge(closestId, connecting)
-        else
-          mapData.addEdge(closestId, connecting)
-        changed()
-        connecting = null
-      }
-    } else {
-      if (closestId) connecting = closestId
-    }
-  }
-  if (e.code === 'KeyM') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].x = mousePos.x
-      mapData.points[closestId].y = mousePos.y
-      changed()
-    }
-  }
-  if (e.code === 'KeyX') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.deletePoint(closestId)
-      changed()
-    }
-  }
-  if (e.code === 'KeyH') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'hohmann'
-      changed()
-    }
-  }
-  if (e.code === 'KeyL') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'lagrange'
-      changed()
-    }
-  }
-  if (e.code === 'KeyB') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      const p = mapData.points[closestId]
-      if (p.type === 'burn') {
-        if (p.landing == null) {
-          p.landing = 1
-        } else if (p.landing === 1) {
-          p.landing = 0.5
-        } else {
-          delete p.landing
+  if (drawingPoints) {
+    if (e.code === 'KeyA') { // Add edge
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (connecting) {
+        if (closestId && closestId !== connecting) {
+          if (mapData.hasEdge(closestId, connecting))
+            mapData.deleteEdge(closestId, connecting)
+          else
+            mapData.addEdge(closestId, connecting)
+          changed()
+          connecting = null
         }
       } else {
-        p.type = 'burn'
+        if (closestId) connecting = closestId
       }
-      changed()
+    }
+    if (e.code === 'KeyM') { // Move point
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].x = mousePos.x
+        mapData.points[closestId].y = mousePos.y
+        changed()
+      }
+    }
+    if (e.code === 'KeyX') { // Delete point
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.deletePoint(closestId)
+        changed()
+      }
+    }
+    if (e.code === 'KeyH') { // Set point type to hohmann
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'hohmann'
+        changed()
+      }
+    }
+    if (e.code === 'KeyL') { // Set point type to lagrange
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'lagrange'
+        changed()
+      }
+    }
+    if (e.code === 'KeyB') { // Set point type to burn / cycle through burn types
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        const p = mapData.points[closestId]
+        if (p.type === 'burn') {
+          if (p.landing == null) {
+            p.landing = 1
+          } else if (p.landing === 1) {
+            p.landing = 0.5
+          } else {
+            delete p.landing
+          }
+        } else {
+          p.type = 'burn'
+        }
+        changed()
+      }
+    }
+    if (e.code === 'KeyD') { // Set point type to decorative
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'decorative'
+        changed()
+      }
+    }
+    if (e.code === 'KeyR') { // Set point type to radhaz
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'radhaz'
+        changed()
+      }
+    }
+    if (e.code === 'KeyZ') { // Toggle hazard
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].hazard = !mapData.points[closestId].hazard
+        changed()
+      }
+    }
+    if (e.code === 'KeyY') { // Set point type to flyby / cycle boost size
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'flyby'
+        mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
+        changed()
+      }
+    }
+    if (e.code === 'KeyS') { // Set point type to site
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'site'
+        mapData.points[closestId].siteName = prompt("Site name", mapData.points[closestId].siteName)
+        changed()
+      }
+    }
+    if (e.code.startsWith('Digit')) { // Set edge label
+      const label = e.code.slice(5)
+      const np = nearestPoint(mousePos.x, mousePos.y)
+      const ne = nearestEdge(mousePos.x, mousePos.y)
+      if (np && ne) {
+        const [a, b] = ne
+        const other = a === np ? b : a
+        mapData.setEdgeLabel(np, other, label)
+        changed()
+      }
     }
   }
-  if (e.code === 'KeyD') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'decorative'
-      changed()
-    }
+
+  if (e.code === 'Tab') { // Toggle edit mode
+    drawingPoints = !drawingPoints
+    e.preventDefault()
   }
-  if (e.code === 'KeyR') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'radhaz'
-      changed()
-    }
-  }
-  if (e.code === 'KeyZ') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].hazard = !mapData.points[closestId].hazard
-      changed()
-    }
-  }
-  if (e.code === 'KeyY') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'flyby'
-      mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
-      changed()
-    }
-  }
-  if (e.code === 'KeyS') {
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (closestId) {
-      mapData.points[closestId].type = 'site'
-      mapData.points[closestId].siteName = prompt("Site name", mapData.points[closestId].siteName)
-      changed()
-    }
-  }
-  if (e.code === 'KeyF') {
+
+  if (e.code === 'KeyF') { // Find path
     const closestId = nearestPoint(mousePos.x, mousePos.y)
     if (pathing) {
       if (closestId && closestId !== pathing) {
@@ -250,21 +271,6 @@ window.onkeydown = e => {
     } else {
       if (closestId) pathing = closestId
     }
-  }
-  if (e.code.startsWith('Digit')) {
-    const label = e.code.slice(5)
-    const np = nearestPoint(mousePos.x, mousePos.y)
-    const ne = nearestEdge(mousePos.x, mousePos.y)
-    if (np && ne) {
-      const [a, b] = ne
-      const other = a === np ? b : a
-      mapData.setEdgeLabel(np, other, label)
-      changed()
-    }
-  }
-  if (e.code === 'Tab') {
-    drawingPoints = !drawingPoints
-    e.preventDefault()
   }
   if (e.code === 'Backquote') {
     const pId = nearestPoint(mousePos.x, mousePos.y)
@@ -529,6 +535,5 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
-  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay, () => {
-  })
+  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay)
 }

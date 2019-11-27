@@ -54,20 +54,32 @@ function changed() {
 }
 
 canvas.onclick = e => {
-  if (!editing) {
-    return
+  if (editing) {
+    const x = e.offsetX
+    const y = e.offsetY
+    const xPct = x / canvas.width
+    const yPct = y / canvas.height
+    const pointId = Math.random().toString()
+    mapData.addPoint(pointId, {
+      x: xPct,
+      y: yPct,
+      type: 'hohmann',
+    })
+    draw()
+  } else {
+    const closestId = nearestPoint(mousePos.x, mousePos.y, id => mapData.points[id].type !== 'decorative')
+    if (pathing) {
+      if (closestId && closestId !== pathing) {
+        console.time('finding path')
+        highlightedPath = findPath(pathing, closestId)
+        console.timeEnd('finding path')
+        pathing = null
+      }
+    } else {
+      if (closestId) pathing = closestId
+    }
+    draw()
   }
-  const x = e.offsetX
-  const y = e.offsetY
-  const xPct = x / canvas.width
-  const yPct = y / canvas.height
-  const pointId = Math.random().toString()
-  mapData.addPoint(pointId, {
-    x: xPct,
-    y: yPct,
-    type: 'hohmann',
-  })
-  draw()
 }
 
 const mousePos = {x: 0, y: 0} // pct
@@ -563,11 +575,27 @@ function draw() {
     const nearest = nearestPoint(mousePos.x, mousePos.y, id => points[id].type !== 'decorative')
     if (nearest != null) {
       const p = points[nearest]
+      ctx.save()
       ctx.strokeStyle = "yellow"
       ctx.lineWidth = 4
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = 5
       ctx.beginPath()
       ctx.arc(p.x * width, p.y * height, 15, 0, 2*Math.PI)
       ctx.stroke()
+      ctx.restore()
+    }
+    if (pathing != null) {
+      const p = points[pathing]
+      ctx.save()
+      ctx.strokeStyle = "red"
+      ctx.lineWidth = 4
+      ctx.shadowColor = 'rgba(0,0,0,0.5)'
+      ctx.shadowBlur = 5
+      ctx.beginPath()
+      ctx.arc(p.x * width, p.y * height, 15, 0, 2*Math.PI)
+      ctx.stroke()
+      ctx.restore()
     }
   }
   if (highlightedPath) {

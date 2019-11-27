@@ -11,18 +11,20 @@ body, html {
   position: absolute; top: 0; left: 0;
 }
 #overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  position: fixed; top: 0; right: 0; bottom: 0;
   pointer-events: none;
-  overflow: hidden;
 }
 canvas { display: block; }
 
 .PathInfo {
-  color: red;
+  color: white;
+  font-size: 20px;
+  font-family: sans-serif;
   background: black;
-  border-bottom: 2px solid white;
-  border-right: 2px solid white;
-  border-bottom-right-radius: 3px;
-  width: 100px;
-  padding: 8px;
+  border-bottom: 4px solid white;
+  border-left: 4px solid white;
+  border-bottom-left-radius: 8px;
+  width: 120px;
+  padding: 16px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }

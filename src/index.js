@@ -614,5 +614,11 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
-  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight: burnWeight}), overlay)
+  let weight = [0, 0, 0]
+  if (highlightedPath) {
+    for (let i = 1; i < highlightedPath.length; i++) {
+      weight = tuple3s.add(weight, burnsTurnsHazards(highlightedPath[i-1], highlightedPath[i]))
+    }
+  }
+  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay)
 }

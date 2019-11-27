@@ -35,7 +35,7 @@ function zoomed({x, y, k}) {
   main.style.transformOrigin = '0 0'
 }
 
-let drawingPoints = true
+let editing = false
 let mapData = null
 
 const loadData = (json) => {
@@ -54,7 +54,7 @@ function changed() {
 }
 
 canvas.onclick = e => {
-  if (!drawingPoints) {
+  if (!editing) {
     return
   }
   const x = e.offsetX
@@ -77,10 +77,11 @@ canvas.onmousemove = e => {
   draw()
 }
 
-function nearestPoint(testX, testY) {
+function nearestPoint(testX, testY, filter = undefined) {
   let closest = null
   let dist = Infinity
-  for (let pId in mapData.points) {
+  for (const pId in mapData.points) {
+    if (filter && !filter(pId)) continue
     const {x, y} = mapData.points[pId]
     const dx = x - testX
     const dy = y - testY
@@ -141,7 +142,7 @@ window.onkeydown = e => {
     highlightedPath = null
     debugPathfinding = null
   }
-  if (drawingPoints) {
+  if (editing) {
     if (e.code === 'KeyA') { // Add edge
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (connecting) {
@@ -255,7 +256,7 @@ window.onkeydown = e => {
   }
 
   if (e.code === 'Tab') { // Toggle edit mode
-    drawingPoints = !drawingPoints
+    editing = !editing
     e.preventDefault()
   }
 
@@ -436,14 +437,14 @@ function findPath(fromId, toId) {
 
 function draw() {
   if (!mapData) return
+  const { points, edges, edgeLabels } = mapData
   const ctx = canvas.getContext('2d')
   const {width, height} = ctx.canvas
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.lineWidth = 2
   const nearestToCursor = nearestPoint(mousePos.x, mousePos.y)
-  if (drawingPoints) {
+  if (editing) {
     const ce = nearestEdge(mousePos.x, mousePos.y)
-    const { points, edges, edgeLabels } = mapData
     edges.forEach(e => {
       const [a, b] = e.split(":")
       const pa = points[a]
@@ -557,6 +558,16 @@ function draw() {
         ctx.fillText(label, p.x * width + nx * displacement, p.y * height + ny * displacement)
       }
       ctx.restore()
+    }
+  } else {
+    const nearest = nearestPoint(mousePos.x, mousePos.y, id => points[id].type !== 'decorative')
+    if (nearest != null) {
+      const p = points[nearest]
+      ctx.strokeStyle = "yellow"
+      ctx.lineWidth = 4
+      ctx.beginPath()
+      ctx.arc(p.x * width, p.y * height, 15, 0, 2*Math.PI)
+      ctx.stroke()
     }
   }
   if (highlightedPath) {

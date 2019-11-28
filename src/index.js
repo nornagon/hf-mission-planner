@@ -359,14 +359,15 @@ const ints = {
   lessThan: (a, b) => a < b
 }
 
-const tuple3s = {
-  zero: [0, 0, 0],
-  add: ([a, b, c], [x, y, z]) => [a + x, b + y, c + z],
-  lessThan: ([a,b,c], [x,y,z]) => {
+const tuple4s = {
+  zero: [0, 0, 0, 0],
+  add: (a, b) => a.map((x, i) => x + b[i]),
+  lessThan: ([a,b,c,d], [x,y,z,w]) => {
     return (
       a < x || (a === x && (
         b < y || (b === y) && (
-          c < z))))
+          c < z || (c === z) && (
+            d < w)))))
   }
 }
 
@@ -409,11 +410,11 @@ function hazardWeight(u, v) {
   return 0
 }
 
-function burnsTurnsHazards(u, v) {
+function burnsTurnsHazardsSegments(u, v) {
   const burns = burnWeight(u, v)
   const turns = turnWeight(u, v) // Assuming infinite thrust and no waiting...
   const hazards = hazardWeight(u, v)
-  return [burns, turns, hazards]
+  return [burns, turns, hazards, 1]
 }
 
 function findPath(fromId, toId) {
@@ -432,7 +433,7 @@ function findPath(fromId, toId) {
   // point: {node: string; dir: string?, id: string}
   const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
-  const {distance, previous} = dijkstra(getNeighbors, burnsTurnsHazards, tuple3s, id, source, allowed)
+  const {distance, previous} = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, id, source, allowed)
 
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
@@ -616,10 +617,10 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
-  let weight = [0, 0, 0]
+  let weight = tuple4s.zero
   if (highlightedPath) {
     for (let i = 1; i < highlightedPath.length; i++) {
-      weight = tuple3s.add(weight, burnsTurnsHazards(highlightedPath[i-1], highlightedPath[i]))
+      weight = tuple4s.add(weight, burnsTurnsHazardsSegments(highlightedPath[i-1], highlightedPath[i]))
     }
   }
   ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay)

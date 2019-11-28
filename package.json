@@ -5,7 +5,8 @@
   "description": "High Frontier Mission Planner",
   "scripts": {
     "build": "webpack",
-    "start:dev": "webpack-dev-server"
+    "start:dev": "webpack-dev-server",
+    "update-gh-pages": "npm run build && node update-gh-pages.js"
   },
   "repository": {
     "type": "git",

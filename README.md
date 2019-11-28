@@ -34,14 +34,14 @@ If you're developing this tool you might want to edit the map data to fix errors
 
 ### Path planning heuristics
 
-At present, there is only one available method by which the tool can compare two paths to decide which is 'better', and that's the "burns > turns > hazards" metric. That is, if the planner can save a burn by waiting a turn or taking a hazard, it will. Similarly, if it can save a turn by taking a hazard, it will. Ideally it would be possible to rearrange these goals to minimize hazards over burns, or turns over burns, or any arbitrary ordering. See #4.
+At present, there is only one available method by which the tool can compare two paths to decide which is 'better', and that's the "burns > turns > hazards" metric. That is, if the planner can save a burn by waiting a turn or taking a hazard, it will. Similarly, if it can save a turn by taking a hazard, it will. Ideally it would be possible to rearrange these goals to minimize hazards over burns, or turns over burns, or any arbitrary ordering. See [#4](https://github.com/nornagon/hf-mission-planner/issues/4).
 
 ### Implement the Solar Oberth flyby
 
-Currently, the tool has no way to ask you for the thrust of your vehicle, so it can't calculate the bonus burns you'd get from performing a Solar Oberth maneuver. As such, the node is left unconnected on the graph currently. See #9.
+Currently, the tool has no way to ask you for the thrust of your vehicle, so it can't calculate the bonus burns you'd get from performing a Solar Oberth maneuver. As such, the node is left unconnected on the graph currently. See [#9](https://github.com/nornagon/hf-mission-planner/issues/9).
 
-Further, once we know the thrust of a vehicle, it's possible we could compute slightly more efficient paths by knowing the maximum number of burns per turn that a vehicle is capable of. Handling multiple engines with differing thrust is probably out of scope for the tool at present---if needed, you can plan two separate paths with different thrusts.
+Further, once we know the thrust of a vehicle, it's possible we could compute slightly more efficient paths by knowing the maximum number of burns per turn that a vehicle is capable of. Handling multiple engines with differing thrust is probably out of scope for the tool at present—if needed, you can plan two separate paths with different thrusts.
 
 ### Represent synodic sites
 
-The tool currently assumes that every site is available at all times, which isn't true in the game. Some sites are "synodic sites", indicated on the map by blue, red or yellow outlines, and it's only possible to enter those sites during the relevant phase of the sun spot cycle. This is particularly relevant for the Venus flyby node, which the planner likes to use for all sorts of missions, but is actually only available 1/3rd of the time. See #11.
+The tool currently assumes that every site is available at all times, which isn't true in the game. Some sites are "synodic sites", indicated on the map by blue, red or yellow outlines, and it's only possible to enter those sites during the relevant phase of the sun spot cycle. This is particularly relevant for the Venus flyby node, which the planner likes to use for all sorts of missions, but is actually only available 1/3rd of the time. See [#11](https://github.com/nornagon/hf-mission-planner/issues/11).

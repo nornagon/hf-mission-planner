@@ -603,10 +603,10 @@ function draw() {
   }
   if (highlightedPath) {
     ctx.save()
-    ctx.lineWidth = 16
+    ctx.lineWidth = 20
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
-    ctx.strokeStyle = 'rgba(255,0,0,0.5)'
+    ctx.strokeStyle = 'rgba(214,15,122,0.7)'
     const p0 = mapData.points[highlightedPath[0].node]
     ctx.beginPath()
     ctx.moveTo(p0.x * width, p0.y * height)

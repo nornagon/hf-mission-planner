@@ -307,16 +307,16 @@ function allowed(u, v, id, previous) {
     // Once you enter a site, your turn ends.
     return false
   }
-  // look back through |previous| starting from |v| to see if [u,v] has already
-  // been traversed.
+  // Find the last node we were in.
   let n = u
   let p
   while (p = previous[id(n)]) {
-    if ((n.node === uId && p.node === vId) || (n.node === vId && p.node === uId))
-      return false
+    if (p.node !== uId) break
     n = p
   }
-  return true
+  // If the last node we entered is the same as where we just came from, this
+  // transition is forbidden. (H4e. No U-Turns)
+  return !p || p.node !== vId
 }
 
 function getNeighbors(p) {

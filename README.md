@@ -2,14 +2,14 @@
 
 This is a ~cheating tool~ mission planner for the board game [High Frontier](https://boardgamegeek.com/boardgame/281655/high-frontier-4-all). It can help you to find the best route from one place in the solar system to another. It's built in the browser, so there's nothing to download or install.
 
-[☞ **Open Planner**](https://nornagon.github.io/hf-mission-planner)
+[☞ **Open HF Mission Planner**](https://nornagon.github.io/hf-mission-planner)
 
 For example, this trajectory from LEO to the Sol-Oort exit takes 18 burns, 32 turns, and takes your spacecraft through 2 hazard zone-equivalents (a Saturn ring crossing, and several radiation hazard zones)
 ![Example trajectory from LEO to the Sol-Oort exit](docs/example-trajectory.png)
 
 ## Usage
 
-The tool will load with the view over Earth, where the air is free and the breathing is easy. You can zoom the view with the scroll wheel, and pan by clicking and dragging. To plan a path from one place to another, click the point you want to start from, and the point you wish to end up at. Information about the planned trajectory is shown in the top-right corner.
+The tool will load with the view over Earth, where the air is free and the breathing is easy. You can zoom the view with the scroll wheel, and pan by clicking and dragging. To plan a path from one place to another, click the point you want to start from, and the point you wish to end up at. Information about the planned trajectory is shown in the top-right corner. Press <kbd>Esc</kbd> to clear the current trajectory (or just click on a new starting point to plan your next path).
 
 ### Edit mode
 

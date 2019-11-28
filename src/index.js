@@ -12,12 +12,14 @@ import { MapData } from './MapData'
 
 const map = new Image
 map.src = HF4Map
-main.appendChild(map)
+main.textContent = 'loading...'
 
 const canvas = document.createElement('canvas')
 const overlay = document.createElement('div')
 overlay.setAttribute('id', 'overlay')
 map.onload = () => {
+  main.textContent = ''
+  main.appendChild(map)
   canvas.width = map.width
   canvas.height = map.height
   main.appendChild(canvas)

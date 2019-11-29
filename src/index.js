@@ -10,8 +10,10 @@ import { dijkstra } from './dijkstra'
 import { PathInfo } from './PathInfo'
 import { MapData } from './MapData'
 
+const isHF3 = location.search === '?ed=3'
+
 const map = new Image
-map.src = HF4Map
+map.src = isHF3 ? HFMap : HF4Map
 main.textContent = 'loading...'
 
 const canvas = document.createElement('canvas')
@@ -28,7 +30,7 @@ map.onload = () => {
     .scaleExtent([0.2, 1.5])
     .translateExtent([[0,0],[map.width,map.height]])
     .on("zoom", () => zoomed(event.transform))
-  select(document.documentElement).call(z).call(z.translateTo, 4600, 2900)
+  select(document.documentElement).call(z).call(z.translateTo, 0.85 * canvas.width, 0.80 * canvas.height)
   draw()
 }
 
@@ -48,7 +50,11 @@ const loadData = (json) => {
 if ('data' in localStorage) {
   loadData(JSON.parse(localStorage.data))
 } else if (location.protocol !== 'file:') {
-  import('../assets/data-hf4.json').then(({default: data}) => loadData(data))
+  if (isHF3) {
+    import('../assets/data.json').then(({default: data}) => loadData(data))
+  } else {
+    import('../assets/data-hf4.json').then(({default: data}) => loadData(data))
+  }
 }
 
 function changed() {

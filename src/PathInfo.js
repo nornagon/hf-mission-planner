@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 
 const e = React.createElement
 
 const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
-export function PathInfo({path, weight: [burns, turns, hazards], points}) {
+export function PathInfo({path, weight: [burns, turns, hazards]}) {
   if (!path) return null
   else {
     return e('div', {className: 'PathInfo'},

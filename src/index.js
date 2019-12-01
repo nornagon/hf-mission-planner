@@ -41,7 +41,11 @@ function zoomed({x, y, k}) {
 
 let editing = false
 let mapData = null
+let connecting = null
+let highlightedPath = null
 let venus = false
+let pathOrigin = null
+let pathData = null
 
 const loadData = (json) => {
   mapData = MapData.fromJSON(json)
@@ -171,11 +175,6 @@ function nearestEdge(testX, testY) {
     return closestEdge.sort()
   }
 }
-
-let connecting = null
-let pathOrigin = null
-let pathData = null
-let highlightedPath = null
 
 window.onkeydown = e => {
   if (e.code === 'Escape') {
@@ -646,5 +645,5 @@ function draw() {
       weight = tuple4s.add(weight, burnsTurnsHazardsSegments(highlightedPath[i-1], highlightedPath[i]))
     }
   }
-  ReactDOM.render(React.createElement(PathInfo, {points: mapData.points, path: highlightedPath, weight}), overlay)
+  ReactDOM.render(React.createElement(PathInfo, {path: highlightedPath, weight}), overlay)
 }

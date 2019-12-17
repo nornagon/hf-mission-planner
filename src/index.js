@@ -421,6 +421,10 @@ function burnsTurnsHazardsSegments(u, v) {
   return [burns, turns, hazards, 1]
 }
 
+function pathId(p) {
+  return p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
+}
+
 function findPath(fromId) {
   // NB for pathfinding along Hohmanns each
   // hohmann is kind of like two nodes, one for
@@ -437,9 +441,8 @@ function findPath(fromId) {
   // point: {node: string; dir: string?, id: string}
   console.time('calculating paths')
 
-  const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
-  const pathData = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, id, source, allowed)
+  const pathData = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, pathId, source, allowed)
 
   console.timeEnd('calculating paths')
 
@@ -447,17 +450,16 @@ function findPath(fromId) {
 }
 
 function drawPath({ distance, previous }, fromId, toId) {
-  const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
   
   let shorterTo = {node: toId, dir: null, bonus: 0}
-  let shorterToId = id(shorterTo)
+  let shorterToId = pathId(shorterTo)
 
   if (shorterToId in distance) {
     const path = [shorterTo]
     let cur = shorterTo
-    while (id(cur) !== id(source)) {
-      const n = previous[id(cur)]
+    while (pathId(cur) !== pathId(source)) {
+      const n = previous[pathId(cur)]
       path.unshift(n)
       cur = n
     }

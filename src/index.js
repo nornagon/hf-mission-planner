@@ -76,18 +76,31 @@ canvas.onclick = e => {
     draw()
   } else {
     const closestId = nearestPoint(mousePos.x, mousePos.y, id => mapData.points[id].type !== 'decorative')
-    if (pathing) {
-      if (closestId && closestId !== pathing) {
-        console.time('finding path')
-        highlightedPath = findPath(pathing, closestId)
-        console.timeEnd('finding path')
-        pathing = null
-      }
+    if (!closestId) { return }
+
+    if (canPath(closestId)) {
+      highlightedPath = drawPath(pathData, pathOrigin, closestId)
+      endPathing()
     } else {
-      if (closestId) pathing = closestId
+      beginPathing(closestId) 
     }
+
     draw()
   }
+}
+
+function beginPathing(originId) {
+  pathOrigin = originId
+  pathData = findPath(originId)
+}
+
+function canPath(closestId) {
+  return closestId && pathOrigin && closestId !== pathOrigin
+}
+
+function endPathing() {
+  pathOrigin = null
+  pathData = null
 }
 
 const mousePos = {x: 0, y: 0} // pct
@@ -95,6 +108,14 @@ canvas.onmousemove = e => {
   mousePos.x = e.offsetX / canvas.width
   mousePos.y = e.offsetY / canvas.height
   draw()
+
+  if (pathOrigin && pathData) {
+    const closestId = nearestPoint(mousePos.x, mousePos.y, id => mapData.points[id].type !== 'decorative')
+
+    if (canPath(closestId)) {
+      highlightedPath = drawPath(pathData, pathOrigin, closestId)
+    }
+  }
 }
 
 function nearestPoint(testX, testY, filter = undefined) {
@@ -151,16 +172,15 @@ function nearestEdge(testX, testY) {
 }
 
 let connecting = null
-let pathing = null
+let pathOrigin = null
+let pathData = null
 let highlightedPath = null
-let debugPathfinding = null
 
 window.onkeydown = e => {
   if (e.code === 'Escape') {
     connecting = null
-    pathing = null
+    pathOrigin = null
     highlightedPath = null
-    debugPathfinding = null
   }
   if (editing) {
     if (e.code === 'KeyA') { // Add edge
@@ -280,28 +300,6 @@ window.onkeydown = e => {
     e.preventDefault()
   }
 
-  if (e.code === 'KeyF') { // Find path
-    const closestId = nearestPoint(mousePos.x, mousePos.y)
-    if (pathing) {
-      if (closestId && closestId !== pathing) {
-        console.time('finding path')
-        highlightedPath = findPath(pathing, closestId)
-        console.timeEnd('finding path')
-        pathing = null
-      }
-    } else {
-      if (closestId) pathing = closestId
-    }
-  }
-  if (e.code === 'Backquote') {
-    const pId = nearestPoint(mousePos.x, mousePos.y)
-    if (pId) {
-      const id = p => p.dir != null ? `${p.node}@${p.dir}` : p.node
-      const source = {node: pId, dir: null, bonus: 0}
-      debugPathfinding = dijkstra(getNeighbors, burnWeight, ints, id, source, allowed)
-      draw()
-    }
-  }
   draw()
 }
 
@@ -423,7 +421,7 @@ function burnsTurnsHazardsSegments(u, v) {
   return [burns, turns, hazards, 1]
 }
 
-function findPath(fromId, toId) {
+function findPath(fromId) {
   // NB for pathfinding along Hohmanns each
   // hohmann is kind of like two nodes, one for
   // each direction. Moving into either node is
@@ -437,10 +435,21 @@ function findPath(fromId, toId) {
   //    ,-'         `-
   // .-'
   // point: {node: string; dir: string?, id: string}
+  console.time('calculating paths')
+
   const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
   const source = {node: fromId, dir: null, bonus: 0}
-  const {distance, previous} = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, id, source, allowed)
+  const pathData = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, id, source, allowed)
 
+  console.timeEnd('calculating paths')
+
+  return pathData
+}
+
+function drawPath({ distance, previous }, fromId, toId) {
+  const id = p => p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
+  const source = {node: fromId, dir: null, bonus: 0}
+  
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = id(shorterTo)
 
@@ -452,6 +461,7 @@ function findPath(fromId, toId) {
       path.unshift(n)
       cur = n
     }
+
     return path
   }
 }
@@ -545,20 +555,6 @@ function draw() {
         ctx.restore()
       }
 
-      if (debugPathfinding) {
-        ctx.save()
-        ctx.fillStyle = 'magenta'
-        ctx.font = '14px bold helvetica'
-        ctx.textBaseline = 'middle'
-        ctx.textAlign = 'center'
-        const {distance} = debugPathfinding
-        if (pId in edgeLabels) {
-        } else {
-          ctx.fillText(distance[pId], p.x * width, p.y * height)
-        }
-        ctx.restore()
-      }
-
       ctx.save()
       ctx.fillStyle = 'white'
       ctx.shadowOffsetX = 1
@@ -594,8 +590,8 @@ function draw() {
       ctx.stroke()
       ctx.restore()
     }
-    if (pathing != null) {
-      const p = points[pathing]
+    if (pathOrigin != null) {
+      const p = points[pathOrigin]
       ctx.save()
       ctx.strokeStyle = "red"
       ctx.lineWidth = 4

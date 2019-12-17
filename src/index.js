@@ -41,6 +41,7 @@ function zoomed({x, y, k}) {
 
 let editing = false
 let mapData = null
+let venus = false
 
 const loadData = (json) => {
   mapData = MapData.fromJSON(json)
@@ -274,6 +275,14 @@ window.onkeydown = e => {
         changed()
       }
     }
+    if (e.code === 'KeyV') { // Set point type to be venus
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        mapData.points[closestId].type = 'venus'
+        mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
+        changed()
+      }
+    }
     if (e.code === 'KeyS') { // Set point type to site
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (closestId) {
@@ -293,6 +302,11 @@ window.onkeydown = e => {
         changed()
       }
     }
+  }
+
+  if (e.code === 'KeyV') {
+    venus = !venus
+    if (pathData) { beginPathing(pathOrigin) }
   }
 
   if (e.code === 'Tab') { // Toggle edit mode
@@ -349,8 +363,11 @@ function getNeighbors(p) {
     if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? 1 : 0
-      const flybyBoost = points[other].type === 'flyby' ? points[other].flybyBoost : 0
+      const flybyBoost = points[other].type === 'flyby' || 'venus' ? points[other].flybyBoost : 0
       const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
+      if (points[other].type === 'venus' && !venus) {
+        return
+      }
       ns.push({node: other, dir, bonus: bonusAfterEntry})
     }
   })
@@ -383,7 +400,7 @@ function burnWeight(u, v) {
     return bonus > 0 && !points[vId].landing ? 0 : 1
   } else if (points[vId].type === 'hohmann') {
     return uId === vId && uDir != null && vDir != null && uDir !== vDir ? Math.max(0, 2 - bonus) : 0;
-  } else if (points[vId].type === 'flyby') {
+  } else if (points[vId].type === 'flyby' || points[vId].type === 'venus') {
     return 0
   } else {
     return 0
@@ -506,6 +523,8 @@ function draw() {
         }
       } else if (p.type === 'radhaz') {
         ctx.fillStyle = 'yellow'
+      } else if (p.type === 'venus') {
+        ctx.fillStyle = 'orange'
       } else if (p.type === 'site') {
         ctx.fillStyle = 'black'
       } else if (p.type === 'burn') {

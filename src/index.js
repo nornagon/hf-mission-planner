@@ -605,6 +605,35 @@ function draw() {
       ctx.restore()
     }
   } else {
+    for (let pId in points) {
+      const p = points[pId]
+      if (p.type === 'venus') {
+        if (!venus) {
+          ctx.save()
+          ctx.lineWidth = 8
+          ctx.strokeStyle = "red"
+          ctx.lineCap = "round"
+          ctx.beginPath()
+          const r = 15
+          ctx.moveTo(p.x * width - r, p.y * height - r)
+          ctx.lineTo(p.x * width + r, p.y * height + r)
+          ctx.moveTo(p.x * width + r, p.y * height - r)
+          ctx.lineTo(p.x * width - r, p.y * height + r)
+          ctx.stroke()
+          ctx.restore()
+        }
+        ctx.save()
+        ctx.font = 'italic bold 14px helvetica'
+        ctx.fillStyle = 'white'
+        ctx.shadowColor = 'black'
+        ctx.shadowOffsetX = 1
+        ctx.shadowOffsetY = 1
+        ctx.textBaseline = 'bottom'
+        ctx.textAlign = 'center'
+        ctx.fillText(`Press [V] to toggle`, p.x * width, p.y * height - 25)
+        ctx.restore()
+      }
+    }
     const nearest = nearestPoint(mousePos.x, mousePos.y, id => points[id].type !== 'decorative')
     if (nearest != null) {
       const p = points[nearest]

@@ -108,12 +108,7 @@ function endPathing() {
   pathData = null
 }
 
-const mousePos = {x: 0, y: 0} // pct
-canvas.onmousemove = e => {
-  mousePos.x = e.offsetX / canvas.width
-  mousePos.y = e.offsetY / canvas.height
-  draw()
-
+function refreshPath() {
   if (pathOrigin && pathData) {
     const closestId = nearestPoint(mousePos.x, mousePos.y, id => mapData.points[id].type !== 'decorative')
 
@@ -121,6 +116,15 @@ canvas.onmousemove = e => {
       highlightedPath = drawPath(pathData, pathOrigin, closestId)
     }
   }
+}
+
+const mousePos = {x: 0, y: 0} // pct
+canvas.onmousemove = e => {
+  mousePos.x = e.offsetX / canvas.width
+  mousePos.y = e.offsetY / canvas.height
+
+  refreshPath()
+  draw()
 }
 
 function nearestPoint(testX, testY, filter = undefined) {
@@ -301,11 +305,15 @@ window.onkeydown = e => {
         changed()
       }
     }
-  }
-
-  if (e.code === 'KeyV') {
-    venus = !venus
-    if (pathData) { beginPathing(pathOrigin) }
+  } else {
+    if (e.code === 'KeyV') {
+      venus = !venus
+      if (pathData) {
+        beginPathing(pathOrigin)
+        refreshPath()
+        draw()
+      }
+    }
   }
 
   if (e.code === 'Tab') { // Toggle edit mode

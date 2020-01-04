@@ -562,7 +562,7 @@ function draw() {
         ctx.fillText('☠︎', p.x * width, p.y * height)
         ctx.restore()
       }
-      if (p.type === 'flyby') {
+      if (p.type === 'flyby' || p.type === 'venus') {
         ctx.save()
         ctx.fillStyle = 'white'
         ctx.shadowOffsetX = 1

@@ -5,7 +5,7 @@ import { select, event } from 'd3-selection'
 
 import './index.css'
 import HFMap from '../assets/hf.png'
-import HF4Map from '../assets/hf4.png'
+import HF4Map from '../assets/hf4.jpg'
 import { dijkstra } from './dijkstra'
 import { PathInfo } from './PathInfo'
 import { MapData } from './MapData'

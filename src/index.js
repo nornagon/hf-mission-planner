@@ -289,8 +289,11 @@ window.onkeydown = e => {
     if (e.code === 'KeyS') { // Set point type to site
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (closestId) {
-        mapData.points[closestId].type = 'site'
-        mapData.points[closestId].siteName = prompt("Site name", mapData.points[closestId].siteName)
+        const p = mapData.points[closestId]
+        p.type = 'site'
+        p.siteName = prompt("Site name", p.siteName)
+        p.siteSize = prompt("Site size + type", p.siteSize)
+        p.siteWater = prompt("Site water", p.siteWater)
         changed()
       }
     }
@@ -580,6 +583,16 @@ function draw() {
         ctx.textBaseline = 'middle'
         ctx.textAlign = 'center'
         ctx.fillText(`+${p.flybyBoost}`, p.x * width, p.y * height)
+        ctx.restore()
+      }
+      if (p.type === 'site') {
+        ctx.save()
+        ctx.fillStyle = 'white'
+        ctx.font = '12px helvetica'
+        ctx.textBaseline = 'middle'
+        ctx.textAlign = 'center'
+        ctx.fillText(`${p.siteSize}`, p.x * width, p.y * height - 6)
+        ctx.fillText(`${p.siteWater}`, p.x * width, p.y * height + 6)
         ctx.restore()
       }
 

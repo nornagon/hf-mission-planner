@@ -7,7 +7,7 @@ import './index.css'
 import HFMap from '../assets/hf.png'
 import HF4Map from '../assets/hf4.jpg'
 import { dijkstra } from './dijkstra'
-import { PathInfo } from './PathInfo'
+import { Overlay } from './Overlay'
 import { MapData } from './MapData'
 
 const isHF3 = location.search === '?ed=3'
@@ -29,6 +29,9 @@ map.onload = () => {
   const z = zoom()
     .scaleExtent([0.2, 1.5])
     .translateExtent([[0,0],[map.width,map.height]])
+    .filter(() => {
+      return !event.ctrlKey && !event.button && event.target.tagName === 'CANVAS'
+    })
     .on("zoom", () => zoomed(event.transform))
   select(document.documentElement).call(z).call(z.translateTo, 0.85 * canvas.width, 0.80 * canvas.height)
   draw()
@@ -505,6 +508,12 @@ function pathWeight(path) {
   return weight
 }
 
+let isru = 0
+function setIsru(e) {
+  isru = e
+  draw()
+}
+
 function draw() {
   if (!mapData) return
   const { points, edges, edgeLabels } = mapData
@@ -684,7 +693,7 @@ function draw() {
 
       for (const pId in points) {
         const p = points[pId]
-        if (p.type === 'site') {
+        if (p.type === 'site' && p.siteWater >= isru) {
           ctx.save()
           ctx.font = 'bold 70px helvetica'
           ctx.shadowColor = 'black'
@@ -726,5 +735,5 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(PathInfo, {path: highlightedPath, weight}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru}), overlay)
 }

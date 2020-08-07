@@ -495,6 +495,16 @@ function drawPath({ distance, previous }, fromId, toId) {
   }
 }
 
+function pathWeight(path) {
+  let weight = tuple4s.zero
+  if (path) {
+    for (let i = 1; i < path.length; i++) {
+      weight = tuple4s.add(weight, burnsTurnsHazardsSegments(path[i-1], path[i]))
+    }
+  }
+  return weight
+}
+
 function draw() {
   if (!mapData) return
   const { points, edges, edgeLabels } = mapData
@@ -671,6 +681,32 @@ function draw() {
       ctx.arc(p.x * width, p.y * height, 15, 0, 2*Math.PI)
       ctx.stroke()
       ctx.restore()
+
+      for (const pId in points) {
+        const p = points[pId]
+        if (p.type === 'site') {
+          ctx.save()
+          ctx.font = 'bold 70px helvetica'
+          ctx.shadowColor = 'black'
+          ctx.shadowOffsetX = 0
+          ctx.shadowOffsetY = 0
+          ctx.shadowBlur = 10
+          ctx.textBaseline = 'middle'
+          ctx.textAlign = 'center'
+          const path = drawPath(pathData, pathOrigin, pId)
+          const weight = pathWeight(path)[0]
+          const colors = [
+            '#ffffb2',
+            '#fecc5c',
+            '#fd8d3c',
+            '#f03b20',
+            '#bd0026',
+          ]
+          ctx.fillStyle = colors[Math.min(colors.length - 1, weight)]
+          ctx.fillText(weight, p.x * width, p.y * height)
+          ctx.restore()
+        }
+      }
     }
   }
   if (highlightedPath) {
@@ -689,11 +725,6 @@ function draw() {
     ctx.stroke()
     ctx.restore()
   }
-  let weight = tuple4s.zero
-  if (highlightedPath) {
-    for (let i = 1; i < highlightedPath.length; i++) {
-      weight = tuple4s.add(weight, burnsTurnsHazardsSegments(highlightedPath[i-1], highlightedPath[i]))
-    }
-  }
+  const weight = pathWeight(highlightedPath)
   ReactDOM.render(React.createElement(PathInfo, {path: highlightedPath, weight}), overlay)
 }

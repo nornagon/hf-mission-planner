@@ -46,7 +46,7 @@ let editing = false
 let mapData = null
 let connecting = null
 let highlightedPath = null
-let venus = false
+let venusFlybyAvailable = false
 let pathOrigin = null
 let pathData = null
 
@@ -90,7 +90,7 @@ canvas.onclick = e => {
       highlightedPath = drawPath(pathData, pathOrigin, closestId)
       endPathing()
     } else {
-      beginPathing(closestId) 
+      beginPathing(closestId)
     }
 
     draw()
@@ -313,7 +313,7 @@ window.onkeydown = e => {
     }
   } else {
     if (e.code === 'KeyV') {
-      venus = !venus
+      venusFlybyAvailable = !venusFlybyAvailable
       if (pathData) {
         beginPathing(pathOrigin)
         refreshPath()
@@ -376,11 +376,8 @@ function getNeighbors(p) {
     if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? 1 : 0
-      const flybyBoost = points[other].type === 'flyby' || points[other].type === 'venus' ? points[other].flybyBoost : 0
+      const flybyBoost = points[other].type === 'flyby' || (points[other].type === 'venus' && venusFlybyAvailable) ? points[other].flybyBoost : 0
       const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
-      if (points[other].type === 'venus' && !venus) {
-        return
-      }
       ns.push({node: other, dir, bonus: bonusAfterEntry})
     }
   })
@@ -481,7 +478,7 @@ function findPath(fromId) {
 
 function drawPath({ distance, previous }, fromId, toId) {
   const source = {node: fromId, dir: null, bonus: 0}
-  
+
   let shorterTo = {node: toId, dir: null, bonus: 0}
   let shorterToId = pathId(shorterTo)
 
@@ -640,7 +637,7 @@ function draw() {
     for (let pId in points) {
       const p = points[pId]
       if (p.type === 'venus') {
-        if (!venus) {
+        if (!venusFlybyAvailable) {
           ctx.save()
           ctx.lineWidth = 8
           ctx.strokeStyle = "red"

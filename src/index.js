@@ -390,15 +390,24 @@ const ints = {
   lessThan: (a, b) => a < b
 }
 
-const tuple4s = {
-  zero: [0, 0, 0, 0],
-  add: (a, b) => a.map((x, i) => x + b[i]),
-  lessThan: ([a,b,c,d], [x,y,z,w]) => {
-    return (
-      a < x || (a === x && (
-        b < y || (b === y) && (
-          c < z || (c === z) && (
-            d < w)))))
+const tupleNs = {
+  zero: [],
+  add: (a, b) => {
+    const n = Math.max(a.length, b.length)
+    const r = []
+    for (let i = 0; i < n; i++) {
+      r[i] = (a[i] ?? 0) + (b[i] ?? 0)
+    }
+    return r
+  },
+  lessThan: (a, b) => {
+    const n = Math.max(a.length, b.length)
+    for (let i = 0; i < n; i++) {
+      const ai = a[i] ?? 0
+      const bi = b[i] ?? 0
+      if (ai !== bi) return ai < bi
+    }
+    return false
   }
 }
 
@@ -435,17 +444,26 @@ function hazardWeight(u, v) {
   const { points } = mapData
   if (points[vId].hazard)
     return 1
+  return 0
+}
+
+function radHazardWeight(u, v) {
+  const { node: uId } = u
+  const { node: vId } = v
+  if (uId === vId) return 0
+  const { points } = mapData
   if (points[vId].type === 'radhaz') {
-    return 0.1 // eh, close enough
+    return 1
   }
   return 0
 }
 
-function burnsTurnsHazardsSegments(u, v) {
+function nodeWeight(u, v) {
   const burns = burnWeight(u, v)
   const turns = turnWeight(u, v) // Assuming infinite thrust and no waiting...
   const hazards = hazardWeight(u, v)
-  return [burns, turns, hazards, 1]
+  const radHazards = radHazardWeight(u, v)
+  return [burns, turns, hazards, radHazards, 1]
 }
 
 function pathId(p) {
@@ -469,7 +487,7 @@ function findPath(fromId) {
   console.time('calculating paths')
 
   const source = {node: fromId, dir: null, bonus: 0}
-  const pathData = dijkstra(getNeighbors, burnsTurnsHazardsSegments, tuple4s, pathId, source, allowed)
+  const pathData = dijkstra(getNeighbors, nodeWeight, tupleNs, pathId, source, allowed)
 
   console.timeEnd('calculating paths')
 
@@ -496,10 +514,10 @@ function drawPath({ distance, previous }, fromId, toId) {
 }
 
 function pathWeight(path) {
-  let weight = tuple4s.zero
+  let weight = tupleNs.zero
   if (path) {
     for (let i = 1; i < path.length; i++) {
-      weight = tuple4s.add(weight, burnsTurnsHazardsSegments(path[i-1], path[i]))
+      weight = tupleNs.add(weight, nodeWeight(path[i-1], path[i]))
     }
   }
   return weight

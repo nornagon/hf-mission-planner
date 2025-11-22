@@ -28,8 +28,8 @@ canvas { display: block; }
   border-bottom: 4px solid white;
   border-left: 4px solid white;
   border-bottom-left-radius: 8px;
-  width: 120px;
   padding: 16px;
+  white-space: nowrap;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }
 

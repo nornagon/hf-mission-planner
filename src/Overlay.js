@@ -4,13 +4,14 @@ const e = React.createElement
 
 const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
-function PathInfo({path, weight: [burns, turns, hazards]}) {
+function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
   if (!path) return e('div')
   else {
     return e('div', {className: 'PathInfo'},
       e('div', {}, `${pl(burns, 'burn', 'burns')}`),
       e('div', {}, `${pl(turns, 'turn', 'turns')}`),
-      e('div', {}, `${pl(Math.floor(hazards), 'hazard', 'hazards')}`)
+      e('div', {}, `${pl(hazards, 'hazard', 'hazards')}`),
+      e('div', {}, `${pl(hazards, 'rad hazard', 'rad hazards')}`),
     )
   }
 }

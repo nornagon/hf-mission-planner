@@ -11,7 +11,7 @@ function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
       e('div', {}, `${pl(burns, 'burn', 'burns')}`),
       e('div', {}, `${pl(turns, 'turn', 'turns')}`),
       e('div', {}, `${pl(hazards, 'hazard', 'hazards')}`),
-      e('div', {}, `${pl(hazards, 'rad hazard', 'rad hazards')}`),
+      e('div', {}, `${pl(radhazards, 'rad hazard', 'rad hazards')}`),
     )
   }
 }

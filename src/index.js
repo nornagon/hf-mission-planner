@@ -77,6 +77,17 @@ function changed() {
   localStorage.data = JSON.stringify(mapData.toJSON())
 }
 
+function downloadFormattedJSON() {
+  const formatted = JSON.stringify(mapData.toJSON(), null, 2) + '\n'
+  const blob = new Blob([formatted], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = isHF3 ? 'hf3-map-data.json' : 'hf4-map-data.json'
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 /** @param {MouseEvent} e */
 canvas.onclick = e => {
   if (editing) {
@@ -341,6 +352,10 @@ window.onkeydown = e => {
         mapData.setEdgeLabel(np, other, label)
         changed()
       }
+    }
+    if (e.code === 'KeyJ') { // Download formatted JSON
+      downloadFormattedJSON()
+      e.preventDefault()
     }
   } else {
     if (e.code === 'KeyV') {

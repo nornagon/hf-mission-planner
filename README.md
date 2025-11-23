@@ -30,6 +30,7 @@ If you're developing this tool you might want to edit the map data to fix errors
 - <kbd>D</kbd> - mark hovered node as decorative. Decorative nodes are used to make paths follow the underlying map, and have no semantic meaning.
 - <kbd>Z</kbd> - mark hovered node as containing a hazard. Works on any node type; hazardousness is orthogonal to node type. Aerobrake nodes are modeled as hazard nodes.
 - <kbd>A</kbd> - link two nodes together. The first node which <kbd>A</kbd> is pressed on is stored, and no link is made until a second node is selected by pressing <kbd>A</kbd> on it.
+- <kbd>J</kbd> - download a formatted JSON export of the current map data.
 - <kbd>0</kbd>–<kbd>9</kbd> - set label of hovered exit. This operates on the hovered node _and_ the hovered edge, which will be highlighted green. It sets the edge label for that entry/exit on the current node. Note that this can be different at different ends of the same edge. Exit labels are used to indicate which directions can be coasted through in a Hohmann: entering on a path labeled '1' means you can coast out through an exit labeled '1', but switching to a path with a different label costs 2 burns. The edge label '0' is special, and is used to indicate 1-way edges: the planner will never enter a node through an edge marked '0'. This is used to model aerobrake paths, which can only be traversed in one direction.
 
 ## Future work

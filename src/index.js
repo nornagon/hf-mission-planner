@@ -736,7 +736,8 @@ function draw() {
   }
   if (highlightedPath) {
     ctx.save()
-    ctx.lineWidth = 20
+    const highlightedLineWidth = 20
+    ctx.lineWidth = highlightedLineWidth
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     ctx.strokeStyle = 'rgba(214,15,122,0.7)'
@@ -763,10 +764,12 @@ function draw() {
         const nextP = mapData.points[nextDifferentNode.node]
         const prevP = mapData.points[prevId]
         const currP = mapData.points[pId]
-        const bis = bisector(prevP, currP, nextP)
+        const marker = pauseMarkerSpan(prevP, currP, nextP, highlightedLineWidth, width, height)
+        if (!marker) continue
+        const { dir, pos, neg } = marker
         ctx.beginPath()
-        ctx.moveTo(currP.x * width - bis.x * 10, currP.y * height - bis.y * 10)
-        ctx.lineTo(currP.x * width + bis.x * 10, currP.y * height + bis.y * 10)
+        ctx.moveTo(currP.x * width - dir.x * neg, currP.y * height - dir.y * neg)
+        ctx.lineTo(currP.x * width + dir.x * pos, currP.y * height + dir.y * pos)
         ctx.stroke()
       }
     }
@@ -776,15 +779,65 @@ function draw() {
   ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru}), overlay)
 }
 
-function bisector(a, b, c) {
-  const v1 = { x: b.x - a.x, y: b.y - a.y }
-  const v2 = { x: c.x - b.x, y: c.y - b.y }
-  const norm1 = Math.hypot(v1.x, v1.y)
-  const norm2 = Math.hypot(v2.x, v2.y)
-  if (norm1 === 0 || norm2 === 0) return { x: 0, y: 0 }
-  const u1 = { x: v1.x / norm1, y: v1.y / norm1 }
-  const u2 = { x: v2.x / norm2, y: v2.y / norm2 }
-  const bis = { x: u1.x + u2.x, y: u1.y + u2.y }
-  const bisNorm = Math.hypot(bis.x, bis.y)
-  return { y: -bis.x / bisNorm, x: bis.y / bisNorm }
+function pauseMarkerSpan(prev, curr, next, lineWidth, width, height) {
+  const toCanvas = ({ x, y }) => ({ x: x * width, y: y * height })
+  const a = toCanvas(prev)
+  const b = toCanvas(curr)
+  const c = toCanvas(next)
+
+  const vIn = { x: b.x - a.x, y: b.y - a.y }
+  const vOut = { x: c.x - b.x, y: c.y - b.y }
+  const normIn = Math.hypot(vIn.x, vIn.y)
+  const normOut = Math.hypot(vOut.x, vOut.y)
+  if (normIn === 0 || normOut === 0) return null
+
+  const uIn = { x: vIn.x / normIn, y: vIn.y / normIn }
+  const uOut = { x: vOut.x / normOut, y: vOut.y / normOut }
+
+  const bisectorDir = { x: uIn.x + uOut.x, y: uIn.y + uOut.y }
+  const bisectorLen = Math.hypot(bisectorDir.x, bisectorDir.y)
+  const dir = bisectorLen === 0
+    ? { x: -uIn.y, y: uIn.x }
+    : { x: -bisectorDir.y / bisectorLen, y: bisectorDir.x / bisectorLen }
+
+  const radius = lineWidth / 2
+
+  const distToSegment = (p, s0, s1) => {
+    const vx = s1.x - s0.x
+    const vy = s1.y - s0.y
+    const l2 = vx * vx + vy * vy
+    const t = l2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - s0.x) * vx + (p.y - s0.y) * vy) / l2))
+    const proj = { x: s0.x + t * vx, y: s0.y + t * vy }
+    return Math.hypot(p.x - proj.x, p.y - proj.y)
+  }
+
+  const strokeDistance = (t) => {
+    const p = { x: b.x + dir.x * t, y: b.y + dir.y * t }
+    return Math.min(distToSegment(p, a, b), distToSegment(p, b, c))
+  }
+
+  const extent = (sign) => {
+    const maxT = radius * 20
+    const inside = (t) => strokeDistance(sign * t) <= radius
+    if (!inside(0)) return 0
+
+    let t = radius
+    while (inside(t) && t < maxT) {
+      t *= 2
+    }
+    let lo = 0
+    let hi = Math.min(t, maxT)
+    for (let i = 0; i < 25; i++) {
+      const mid = (lo + hi) / 2
+      if (inside(mid)) lo = mid
+      else hi = mid
+    }
+    return lo
+  }
+
+  const pos = extent(1)
+  const neg = extent(-1)
+
+  if (pos === 0 && neg === 0) return null
+  return { dir, pos, neg }
 }

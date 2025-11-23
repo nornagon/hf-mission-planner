@@ -707,6 +707,7 @@ function draw() {
       ctx.restore()
 
       for (const pId in points) {
+        if (pId === pathOrigin) continue;
         const p = points[pId]
         if (p.type === 'site' && p.siteWater >= isru) {
           ctx.save()
@@ -718,7 +719,7 @@ function draw() {
           ctx.textBaseline = 'middle'
           ctx.textAlign = 'center'
           const path = drawPath(pathData, pathOrigin, pId)
-          const weight = pathWeight(path)[0]
+          const weight = pathWeight(path)[0] ?? 0
           const colors = [
             '#ffffb2',
             '#fecc5c',

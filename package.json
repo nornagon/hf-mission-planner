@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "description": "High Frontier Mission Planner",
   "scripts": {
-    "build": "webpack",
+    "build": "webpack --mode production",
     "typecheck": "tsc --noEmit",
-    "start:dev": "webpack-dev-server",
+    "start:dev": "webpack-dev-server --mode development",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },

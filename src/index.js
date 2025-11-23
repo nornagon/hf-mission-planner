@@ -28,11 +28,18 @@ map.onload = () => {
   canvas.height = map.height
   main.appendChild(canvas)
   document.body.appendChild(overlay)
+  const margin = 0.25
   const z = zoom()
     .scaleExtent([0.2, 1.5])
-    .translateExtent([[0,0],[map.width,map.height]])
+    .translateExtent([[map.width*-margin,map.height*-margin],[map.width*(1+margin),map.height*(1+margin)]])
     .filter(e => {
-      return !e.ctrlKey && !e.button && e.target.tagName === 'CANVAS'
+      // Filter out events with #overlay as an ancestor
+      let el = e.target
+      while (el) {
+        if (el.id === "overlay") return false
+        el = el.parentElement
+      }
+      return !e.ctrlKey && !e.button
     })
     .on("zoom", e => zoomed(e.transform))
   select(document.documentElement).call(z).call(z.translateTo, 0.85 * canvas.width, 0.80 * canvas.height)

@@ -18,12 +18,24 @@ function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
   }
 }
 
+const isruLevels = [0, 1, 2, 3, 4]
+
 /** @param {{isru: number, setIsru: (value: number) => void}} param0 */
 function VehicleInfo({isru, setIsru}) {
   return e('div', {className: 'VehicleInfo'},
-    e('div', {className: 'field'},
-      'ISRU',
-      e('input', {value: isru, type: 'number', min: 0, max: 4, onChange: e => setIsru(Number(e.target.value))})
+    e('div', {className: 'field', role: 'group', 'aria-label': 'ISRU level'},
+      e('span', {className: 'label'}, 'ISRU'),
+      e('div', {className: 'isru-buttons'},
+        isruLevels.map(level =>
+          e('button', {
+            key: level,
+            type: 'button',
+            className: 'isru-button' + (isru === level ? ' selected' : ''),
+            'aria-pressed': isru === level,
+            onClick: () => setIsru(level),
+          }, level)
+        )
+      )
     )
   )
 }

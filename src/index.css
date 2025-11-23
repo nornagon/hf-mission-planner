@@ -1,4 +1,5 @@
 body, html {
+  touch-action: none;
   margin: 0; width: 100%; height: 100%;
   overflow: hidden;
   background: black;
@@ -41,7 +42,7 @@ canvas { display: block; }
   border-top: 4px solid white;
   border-left: 4px solid white;
   border-top-left-radius: 8px;
-  width: 120px;
+  width: 200px;
   padding: 16px;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
@@ -49,8 +50,42 @@ canvas { display: block; }
 
 .VehicleInfo .field {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
 }
-.VehicleInfo input {
-  margin-left: 5px;
-  width: 100%;
+.VehicleInfo .label {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 1;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+.VehicleInfo .isru-buttons {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+.VehicleInfo .isru-button {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  background: #111;
+  color: white;
+  border: 2px solid white;
+  border-radius: 6px;
+  font-size: 18px;
+}
+.VehicleInfo .isru-button.selected {
+  background: white;
+  color: black;
+}
+.VehicleInfo .isru-button:active {
+  transform: translateY(1px);
 }

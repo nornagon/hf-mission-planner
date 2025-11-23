@@ -427,7 +427,7 @@ function burnWeight(u, v) {
 }
 
 function turnWeight(u, v) {
-  const {node: uId, dir: uDir, bonus} = u
+  const {node: uId, dir: uDir} = u
   const {node: vId, dir: vDir} = v
   const { points } = mapData
   if (points[vId].type === 'hohmann') {
@@ -749,7 +749,42 @@ function draw() {
     }
     ctx.stroke()
     ctx.restore()
+    ctx.save()
+    ctx.lineWidth = 4
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+    for (let i = 1; i < highlightedPath.length - 1; i++) {
+      const p = highlightedPath[i]
+      const next = highlightedPath[i + 1]
+      if (turnWeight(p, next) > 0) {
+        const { node: prevId } = highlightedPath[i - 1]
+        const { node: pId } = p
+        const nextDifferentNode = highlightedPath.slice(i + 1).find(p => p.node !== pId)
+        if (!nextDifferentNode) continue
+        const nextP = mapData.points[nextDifferentNode.node]
+        const prevP = mapData.points[prevId]
+        const currP = mapData.points[pId]
+        const bis = bisector(prevP, currP, nextP)
+        ctx.beginPath()
+        ctx.moveTo(currP.x * width - bis.x * 10, currP.y * height - bis.y * 10)
+        ctx.lineTo(currP.x * width + bis.x * 10, currP.y * height + bis.y * 10)
+        ctx.stroke()
+      }
+    }
+    ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
   ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru}), overlay)
+}
+
+function bisector(a, b, c) {
+  const v1 = { x: b.x - a.x, y: b.y - a.y }
+  const v2 = { x: c.x - b.x, y: c.y - b.y }
+  const norm1 = Math.hypot(v1.x, v1.y)
+  const norm2 = Math.hypot(v2.x, v2.y)
+  if (norm1 === 0 || norm2 === 0) return { x: 0, y: 0 }
+  const u1 = { x: v1.x / norm1, y: v1.y / norm1 }
+  const u2 = { x: v2.x / norm2, y: v2.y / norm2 }
+  const bis = { x: u1.x + u2.x, y: u1.y + u2.y }
+  const bisNorm = Math.hypot(bis.x, bis.y)
+  return { y: -bis.x / bisNorm, x: bis.y / bisNorm }
 }

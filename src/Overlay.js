@@ -2,8 +2,10 @@ import React from 'react'
 
 const e = React.createElement
 
+/** @param {number} n @param {string} sg @param {string} pl */
 const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
+/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number]}} props */
 function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
   if (!path) return e('div')
   else {
@@ -16,6 +18,7 @@ function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
   }
 }
 
+/** @param {{isru: number, setIsru: (value: number) => void}} param0 */
 function VehicleInfo({isru, setIsru}) {
   return e('div', {className: 'VehicleInfo'},
     e('div', {className: 'field'},
@@ -25,9 +28,10 @@ function VehicleInfo({isru, setIsru}) {
   )
 }
 
+/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void}} props */
 export function Overlay({path, weight, isru, setIsru}) {
-  return [
+  return e(React.Fragment, null,
     PathInfo({path, weight}),
     VehicleInfo({isru, setIsru}),
-  ]
+  )
 }

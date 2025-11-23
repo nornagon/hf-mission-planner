@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom'
 import React from 'react'
 import { zoom } from 'd3-zoom'
-import { select, event } from 'd3-selection'
+import { select } from 'd3-selection'
 
 import './index.css'
 import HFMap from '../assets/hf.png'
@@ -9,6 +9,8 @@ import HF4Map from '../assets/hf4.jpg'
 import { dijkstra } from './dijkstra'
 import { Overlay } from './Overlay'
 import { MapData } from './MapData'
+
+/** @typedef {import('d3-zoom').ZoomTransform} ZoomTransform */
 
 const isHF3 = location.search === '?ed=3'
 
@@ -29,39 +31,45 @@ map.onload = () => {
   const z = zoom()
     .scaleExtent([0.2, 1.5])
     .translateExtent([[0,0],[map.width,map.height]])
-    .filter(() => {
-      return !event.ctrlKey && !event.button && event.target.tagName === 'CANVAS'
+    .filter(e => {
+      return !e.ctrlKey && !e.button && e.target.tagName === 'CANVAS'
     })
-    .on("zoom", () => zoomed(event.transform))
+    .on("zoom", e => zoomed(e.transform))
   select(document.documentElement).call(z).call(z.translateTo, 0.85 * canvas.width, 0.80 * canvas.height)
   draw()
 }
 
+/** @param {ZoomTransform} param0 */
 function zoomed({x, y, k}) {
   main.style.transform = `translate(${x}px,${y}px) scale(${k})`
   main.style.transformOrigin = '0 0'
 }
 
 let editing = false
-let mapData = null
+let mapData = new MapData
+/** @type {string|null} */
 let connecting = null
+/** @type {PathNode[]|null} */
 let highlightedPath = null
 let venusFlybyAvailable = false
+/** @type {string|null} */
 let pathOrigin = null
+/** @type {PathData|null} */
 let pathData = null
 
+/** @param {MapDataJSON} json */
 const loadData = (json) => {
   mapData = MapData.fromJSON(json)
   setTimeout(draw, 0)
 }
 
 if ('data' in localStorage) {
-  loadData(JSON.parse(localStorage.data))
+  loadData(/** @type {MapDataJSON} */ (JSON.parse(localStorage.data)))
 } else if (location.protocol !== 'file:') {
   if (isHF3) {
-    import('../assets/data.json').then(({default: data}) => loadData(data))
+    import('../assets/data.json').then(({default: data}) => loadData(/** @type {MapDataJSON} */ (data)))
   } else {
-    import('../assets/data-hf4.json').then(({default: data}) => loadData(data))
+    import('../assets/data-hf4.json').then(({default: data}) => loadData(/** @type {MapDataJSON} */ (data)))
   }
 }
 
@@ -69,6 +77,7 @@ function changed() {
   localStorage.data = JSON.stringify(mapData.toJSON())
 }
 
+/** @param {MouseEvent} e */
 canvas.onclick = e => {
   if (editing) {
     const x = e.offsetX
@@ -97,11 +106,13 @@ canvas.onclick = e => {
   }
 }
 
+/** @param {string} originId */
 function beginPathing(originId) {
   pathOrigin = originId
   pathData = findPath(originId)
 }
 
+/** @param {string|null|undefined} closestId */
 function canPath(closestId) {
   return closestId && pathOrigin && closestId !== pathOrigin
 }
@@ -121,7 +132,9 @@ function refreshPath() {
   }
 }
 
+/** @type {Vec2} */
 const mousePos = {x: 0, y: 0} // pct
+/** @param {MouseEvent} e */
 canvas.onmousemove = e => {
   mousePos.x = e.offsetX / canvas.width
   mousePos.y = e.offsetY / canvas.height
@@ -130,6 +143,12 @@ canvas.onmousemove = e => {
   draw()
 }
 
+/**
+ * @param {number} testX
+ * @param {number} testY
+ * @param {(id: string) => boolean} [filter]
+ * @returns {string|undefined}
+ */
 function nearestPoint(testX, testY, filter = undefined) {
   let closest = null
   let dist = Infinity
@@ -148,6 +167,7 @@ function nearestPoint(testX, testY, filter = undefined) {
     return closest
 }
 
+/** @param {number} a */
 function clipToPi(a) {
   if (a < -Math.PI)
     return a + Math.PI * 2 * Math.abs(Math.floor((a + Math.PI) / (Math.PI * 2)))
@@ -157,6 +177,7 @@ function clipToPi(a) {
     return a
 }
 
+/** @param {number} testX @param {number} testY @returns {[string, string]|undefined} */
 function nearestEdge(testX, testY) {
   const npId = nearestPoint(testX, testY)
   if (!npId) return
@@ -166,6 +187,7 @@ function nearestEdge(testX, testY) {
   const mdy = testY - np.y
   const mouseAngle = Math.atan2(mdy, mdx)
   let minD = Infinity
+  /** @type {[string, string]|null} */
   let closestEdge = null
   ns.forEach(otherEndId => {
     const otherEnd = mapData.points[otherEndId]
@@ -178,11 +200,12 @@ function nearestEdge(testX, testY) {
       closestEdge = [npId, otherEndId]
     }
   })
-  if (minD < Math.PI / 4) {
+  if (minD < Math.PI / 4 && closestEdge) {
     return closestEdge.sort()
   }
 }
 
+/** @param {KeyboardEvent} e */
 window.onkeydown = e => {
   if (e.code === 'Escape') {
     connecting = null
@@ -294,9 +317,17 @@ window.onkeydown = e => {
       if (closestId) {
         const p = mapData.points[closestId]
         p.type = 'site'
-        p.siteName = prompt("Site name", p.siteName)
-        p.siteSize = prompt("Site size + type", p.siteSize)
-        p.siteWater = prompt("Site water", p.siteWater)
+        const name = prompt("Site name", p.siteName)
+        const size = prompt("Site size + type", p.siteSize)
+        const water = prompt("Site water", p.siteWater != null ? String(p.siteWater) : '')
+        if (name !== null) p.siteName = name
+        if (size !== null) p.siteSize = size
+        if (water !== null) {
+          const parsed = Number(water)
+          if (Number.isFinite(parsed)) {
+            p.siteWater = parsed
+          }
+        }
         changed()
       }
     }
@@ -330,6 +361,13 @@ window.onkeydown = e => {
   draw()
 }
 
+/**
+ * @param {PathNode} u
+ * @param {PathNode} v
+ * @param {(node: PathNode) => string} id
+ * @param {Record<string, PathNode>} previous
+ * @returns {boolean}
+ */
 function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
@@ -350,6 +388,7 @@ function allowed(u, v, id, previous) {
   return !p || p.node !== vId
 }
 
+/** @param {PathNode} p @returns {PathNode[]} */
 function getNeighbors(p) {
   const {node, dir, bonus} = p
   const ns = []
@@ -385,11 +424,12 @@ function getNeighbors(p) {
 }
 
 const ints = {
-  zero: 0,
-  add: (a, b) => a + b,
-  lessThan: (a, b) => a < b
+  /** @type {number} */ zero: 0,
+  /** @type {(a: number, b: number) => number} */ add: (a, b) => a + b,
+  /** @type {(a: number, b: number) => boolean} */ lessThan: (a, b) => a < b
 }
 
+/** @type {{zero: number[], add: (a: number[], b: number[]) => number[], lessThan: (a: number[], b: number[]) => boolean}} */
 const tupleNs = {
   zero: [],
   add: (a, b) => {
@@ -411,6 +451,7 @@ const tupleNs = {
   }
 }
 
+/** @param {PathNode} u @param {PathNode} v */
 function burnWeight(u, v) {
   const {node: uId, dir: uDir, bonus} = u
   const {node: vId, dir: vDir} = v
@@ -426,6 +467,7 @@ function burnWeight(u, v) {
   }
 }
 
+/** @param {PathNode} u @param {PathNode} v */
 function turnWeight(u, v) {
   const {node: uId, dir: uDir} = u
   const {node: vId, dir: vDir} = v
@@ -437,6 +479,7 @@ function turnWeight(u, v) {
   return 0
 }
 
+/** @param {PathNode} u @param {PathNode} v */
 function hazardWeight(u, v) {
   const { node: uId } = u
   const { node: vId } = v
@@ -447,6 +490,7 @@ function hazardWeight(u, v) {
   return 0
 }
 
+/** @param {PathNode} u @param {PathNode} v */
 function radHazardWeight(u, v) {
   const { node: uId } = u
   const { node: vId } = v
@@ -458,6 +502,7 @@ function radHazardWeight(u, v) {
   return 0
 }
 
+/** @param {PathNode} u @param {PathNode} v @returns {number[]} */
 function nodeWeight(u, v) {
   const burns = burnWeight(u, v)
   const turns = turnWeight(u, v) // Assuming infinite thrust and no waiting...
@@ -466,10 +511,12 @@ function nodeWeight(u, v) {
   return [burns, turns, hazards, radHazards, 1]
 }
 
+/** @param {PathNode} p */
 function pathId(p) {
   return p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
 }
 
+/** @param {string} fromId */
 function findPath(fromId) {
   // NB for pathfinding along Hohmanns each
   // hohmann is kind of like two nodes, one for
@@ -486,7 +533,7 @@ function findPath(fromId) {
   // point: {node: string; dir: string?, id: string}
   console.time('calculating paths')
 
-  const source = {node: fromId, dir: null, bonus: 0}
+  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0})
   const pathData = dijkstra(getNeighbors, nodeWeight, tupleNs, pathId, source, allowed)
 
   console.timeEnd('calculating paths')
@@ -494,10 +541,16 @@ function findPath(fromId) {
   return pathData
 }
 
+/**
+ * @param {PathData} param0
+ * @param {string} fromId
+ * @param {string} toId
+ * @returns {PathNode[]|undefined}
+ */
 function drawPath({ distance, previous }, fromId, toId) {
-  const source = {node: fromId, dir: null, bonus: 0}
+  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0})
 
-  let shorterTo = {node: toId, dir: null, bonus: 0}
+  let shorterTo = /** @type {PathNode} */ ({node: toId, dir: null, bonus: 0})
   let shorterToId = pathId(shorterTo)
 
   if (shorterToId in distance) {
@@ -513,6 +566,7 @@ function drawPath({ distance, previous }, fromId, toId) {
   }
 }
 
+/** @param {PathNode[]|null|undefined} path @returns {number[]} */
 function pathWeight(path) {
   let weight = tupleNs.zero
   if (path) {
@@ -524,6 +578,7 @@ function pathWeight(path) {
 }
 
 let isru = 0
+/** @param {number} e */
 function setIsru(e) {
   isru = e
   draw()
@@ -709,7 +764,8 @@ function draw() {
       for (const pId in points) {
         if (pId === pathOrigin) continue;
         const p = points[pId]
-        if (p.type === 'site' && p.siteWater >= isru) {
+        const siteWater = Number(p.siteWater ?? 0)
+        if (p.type === 'site' && siteWater >= isru) {
           ctx.save()
           ctx.font = 'bold 70px helvetica'
           ctx.shadowColor = 'black'
@@ -728,7 +784,7 @@ function draw() {
             '#bd0026',
           ]
           ctx.fillStyle = colors[Math.min(colors.length - 1, weight)]
-          ctx.fillText(weight, p.x * width, p.y * height)
+          ctx.fillText(String(weight), p.x * width, p.y * height)
           ctx.restore()
         }
       }
@@ -779,7 +835,17 @@ function draw() {
   ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru}), overlay)
 }
 
+/**
+ * @param {MapPoint} prev
+ * @param {MapPoint} curr
+ * @param {MapPoint} next
+ * @param {number} lineWidth
+ * @param {number} width
+ * @param {number} height
+ * @returns {{dir: Vec2, pos: number, neg: number}|null}
+ */
 function pauseMarkerSpan(prev, curr, next, lineWidth, width, height) {
+  /** @param {{x: number, y: number}} param0 */
   const toCanvas = ({ x, y }) => ({ x: x * width, y: y * height })
   const a = toCanvas(prev)
   const b = toCanvas(curr)
@@ -802,6 +868,7 @@ function pauseMarkerSpan(prev, curr, next, lineWidth, width, height) {
 
   const radius = lineWidth / 2
 
+  /** @param {Vec2} p @param {Vec2} s0 @param {Vec2} s1 */
   const distToSegment = (p, s0, s1) => {
     const vx = s1.x - s0.x
     const vy = s1.y - s0.y
@@ -811,13 +878,16 @@ function pauseMarkerSpan(prev, curr, next, lineWidth, width, height) {
     return Math.hypot(p.x - proj.x, p.y - proj.y)
   }
 
+  /** @param {number} t */
   const strokeDistance = (t) => {
     const p = { x: b.x + dir.x * t, y: b.y + dir.y * t }
     return Math.min(distToSegment(p, a, b), distToSegment(p, b, c))
   }
 
+  /** @param {number} sign */
   const extent = (sign) => {
     const maxT = radius * 20
+    /** @param {number} t */
     const inside = (t) => strokeDistance(sign * t) <= radius
     if (!inside(0)) return 0
 

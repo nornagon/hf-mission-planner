@@ -1,9 +1,23 @@
 import Heap from './heap'
 
+/**
+ * @template Node
+ * @template Weight
+ * @param {(node: Node) => Iterable<Node>} getNeighbors
+ * @param {(u: Node, v: Node) => Weight} weight
+ * @param {{zero: Weight, add: (a: Weight, b: Weight) => Weight, lessThan: (a: Weight, b: Weight) => boolean}} monoid
+ * @param {(node: Node) => string} id
+ * @param {Node} source
+ * @param {(u: Node, v: Node, id: (node: Node) => string, previous: Record<string, Node>) => boolean} allowed
+ * @returns {{distance: Record<string, Weight>, previous: Record<string, Node>}}
+ */
 export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source, allowed) {
+  /** @type {Record<string, Weight>} */
   const distance = {}
+  /** @type {Record<string, Node>} */
   const previous = {}
   distance[id(source)] = zero
+  /** @type {Heap<Weight, Node>} */
   const q = new Heap(null, lessThan)
   q.insert(zero, source)
   const inQ = new Set([id(source)])

@@ -32,26 +32,47 @@
  */
 
 
+/** @template Key, Value */
 class Node {
+  /**
+   * @param {Key} key
+   * @param {Value} value
+   */
   constructor(key, value) {
+    /** @type {Key} */
     this.key_ = key
+    /** @type {Value} */
     this.value_ = value
   }
+  /** @returns {Key} */
   getKey() { return this.key_ }
+  /** @returns {Value} */
   getValue() { return this.value_ }
+  /** @returns {Node<Key, Value>} */
   clone() { return new Node(this.key_, this.value_) }
 }
 
+/** @template Key, Value */
 class Heap {
+  /**
+   * @param {Heap<Key, Value>|Record<string, Value>|Array<Value>|null} [opt_heap]
+   * @param {(a: Key, b: Key) => boolean} [opt_lessThan]
+   */
   constructor(opt_heap, opt_lessThan) {
+    /** @type {Array<Node<Key, Value>>} */
     this.nodes_ = []
+    /** @type {(a: Key, b: Key) => boolean} */
     this.lessThan_ = opt_lessThan || ((a, b) => a < b)
     if (opt_heap) {
       this.insertAll(opt_heap);
     }
   }
 
-  /** Insert the given value into the heap with the given key. */
+  /**
+   * Insert the given value into the heap with the given key.
+   * @param {Key} key
+   * @param {Value} value
+   */
   insert(key, value) {
     const node = new Node(key, value)
     const nodes = this.nodes_
@@ -59,7 +80,10 @@ class Heap {
     this.moveUp_(nodes.length - 1)
   }
 
-  /** Adds multiple key-value pairs from another Heap or Object */
+  /**
+   * Adds multiple key-value pairs from another Heap or Object
+   * @param {Heap<Key, Value>|Record<string, Value>|Array<Value>} heap
+   */
   insertAll(heap) {
     let keys, values;
     if (heap instanceof Heap) {
@@ -82,7 +106,7 @@ class Heap {
     }
 
     for (let i = 0; i < keys.length; i++) {
-      this.insert(keys[i], values[i])
+      this.insert(/** @type {Key} */ (keys[i]), values[i])
     }
   }
 
@@ -151,7 +175,10 @@ class Heap {
     nodes[index] = node
   }
 
-  /** Moves the node at the given index up to its proper place in the heap. */
+  /**
+   * Moves the node at the given index up to its proper place in the heap.
+   * @param {number} index
+   */
   moveUp_(index) {
     const nodes = this.nodes_
     const lt = this.lessThan_
@@ -171,17 +198,17 @@ class Heap {
     nodes[index] = node
   }
 
-  /** Gets the index of the left child of the node at the given index. */
+  /** Gets the index of the left child of the node at the given index. @param {number} index */
   getLeftChildIndex_(index) {
     return index * 2 + 1
   }
 
-  /** Gets the index of the right child of the node at the given index. */
+  /** Gets the index of the right child of the node at the given index. @param {number} index */
   getRightChildIndex_(index) {
     return index * 2 + 2
   }
 
-  /** Gets the index of the parent of the node at the given index. */
+  /** Gets the index of the parent of the node at the given index. @param {number} index */
   getParentIndex_(index) {
     return (index - 1) >> 1
   }
@@ -208,12 +235,20 @@ class Heap {
     return rv
   }
 
-  /** Whether the heap contains the given value. */
+  /**
+   * Whether the heap contains the given value.
+   * @param {Value} val
+   * @returns {boolean}
+   */
   containsValue(val) {
     return this.nodes_.some((node) => node.getValue() === val)
   }
 
-  /** Whether the heap contains the given key. */
+  /**
+   * Whether the heap contains the given key.
+   * @param {Key} key
+   * @returns {boolean}
+   */
   containsKey(key) {
     return this.nodes_.some((node) => node.getKey() === key)
   }

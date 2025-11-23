@@ -1,27 +1,39 @@
 export class MapData {
   constructor() {
+    /** @type {PointMap} */
     this._points = {}
+    /** @type {Set<string>} */
     this._edgeSet = new Set
+    /** @type {Map<string, Set<string>>} */
     this._neighbors = new Map
+    /** @type {Record<string, Record<string, string>>} */
     this._edgeLabels = {}
   }
 
+  /** @returns {PointMap} */
   get points() { return this._points }
+  /** @returns {Set<string>} */
   get edges() { return this._edgeSet }
+  /** @returns {Map<string, Set<string>>} */
   get neighbors() { return this._neighbors }
+  /** @returns {Record<string, Record<string, string>>} */
   get edgeLabels() { return this._edgeLabels }
 
+  /** @param {string} nodeId @returns {string[]} */
   neighborsOf(nodeId) {
     return Array.from(this._neighbors.get(nodeId) || [])
   }
 
+  /** @param {string} id @param {MapPoint} point */
   addPoint(id, point) {
     this._points[id] = point
   }
+  /** @param {string} id */
   deletePoint(id) {
     delete this._points[id]
     this.neighborsOf(id).forEach(n => this.deleteEdge(id, n))
   }
+  /** @param {string} a @param {string} b */
   addEdge(a, b) {
     const [low, high] = a < b ? [a, b] : [b, a]
     this._edgeSet.add(`${low}:${high}`)
@@ -30,10 +42,12 @@ export class MapData {
     this._neighbors.get(a).add(b)
     this._neighbors.get(b).add(a)
   }
+  /** @param {string} a @param {string} b */
   hasEdge(a, b) {
     const [low, high] = a < b ? [a, b] : [b, a]
     return this._edgeSet.has(`${low}:${high}`)
   }
+  /** @param {string} a @param {string} b */
   deleteEdge(a, b) {
     const [low, high] = a < b ? [a, b] : [b, a]
     this._edgeSet.delete(`${low}:${high}`)
@@ -50,6 +64,7 @@ export class MapData {
     }
   }
 
+  /** @param {string} a @param {string} b @param {string} label */
   setEdgeLabel(a, b, label) {
     if (!(a in this._points) || !(b in this._points) || !(this.hasEdge(a, b)))
       throw new Error(`Invalid edge label from '${a}' to '${b}'`)
@@ -59,6 +74,7 @@ export class MapData {
     this._edgeLabels[a][b] = label
   }
 
+  /** @param {MapDataJSON} json */
   static fromJSON(json) {
     const mapData = new MapData
     for (let p in json.points) {
@@ -84,6 +100,7 @@ export class MapData {
     return mapData
   }
 
+  /** @returns {MapDataJSON} */
   toJSON() {
     return {
       points: this._points,

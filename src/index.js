@@ -599,10 +599,28 @@ function pathWeight(path) {
   return weight
 }
 
+/** @param {MapPoint} p @returns {number|null} */
+function siteSizeValue(p) {
+  if (!p.siteSize) return null
+  const match = String(p.siteSize).match(/^\d+/)
+  if (!match) return null
+  const n = Number(match[0])
+  return Number.isFinite(n) ? n : null
+}
+
 let isru = 0
+let thrust = 12
 /** @param {number} e */
 function setIsru(e) {
   isru = e
+  draw()
+}
+
+/** @param {number} value */
+function setThrust(value) {
+  const rounded = Math.round(value)
+  const clamped = Math.max(0, Math.min(15, rounded))
+  thrust = clamped
   draw()
 }
 
@@ -787,7 +805,9 @@ function draw() {
         if (pId === pathOrigin) continue;
         const p = points[pId]
         const siteWater = Number(p.siteWater ?? 0)
-        if (p.type === 'site' && siteWater >= isru) {
+        const siteSize = siteSizeValue(p)
+        const hasThrust = siteSize != null && thrust > siteSize
+        if (p.type === 'site' && siteWater >= isru && hasThrust) {
           ctx.save()
           ctx.font = 'bold 70px helvetica'
           ctx.shadowColor = 'black'
@@ -854,7 +874,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru, thrust, setThrust}), overlay)
 }
 
 /**

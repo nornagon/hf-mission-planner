@@ -20,8 +20,15 @@ function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
 
 const isruLevels = [0, 1, 2, 3, 4]
 
-/** @param {{isru: number, setIsru: (value: number) => void}} param0 */
-function VehicleInfo({isru, setIsru}) {
+/** @param {{isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void}} param0 */
+function VehicleInfo({isru, setIsru, thrust, setThrust}) {
+  /** @param {string} value */
+  const updateThrust = (value) => {
+    const n = Number(value)
+    if (Number.isNaN(n)) return
+    setThrust(n)
+  }
+
   return e('div', {className: 'VehicleInfo'},
     e('div', {className: 'field', role: 'group', 'aria-label': 'ISRU level'},
       e('span', {className: 'label'}, 'ISRU'),
@@ -37,13 +44,38 @@ function VehicleInfo({isru, setIsru}) {
         )
       )
     )
+    ,
+    e('div', {className: 'field', role: 'group', 'aria-label': 'Thrust'},
+      e('div', {className: 'label-row'},
+        e('span', {className: 'label'}, 'Thrust')
+      ),
+      e('div', {className: 'thrust-inputs'},
+        e('input', {
+          type: 'range',
+          min: 0,
+          max: 15,
+          step: 1,
+          value: thrust,
+          onChange: (ev) => updateThrust(ev.target.value),
+        }),
+        e('input', {
+          type: 'number',
+          min: 0,
+          max: 15,
+          step: 1,
+          value: thrust,
+          inputMode: 'numeric',
+          onChange: (ev) => updateThrust(ev.target.value),
+        }),
+      )
+    )
   )
 }
 
-/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void}} props */
-export function Overlay({path, weight, isru, setIsru}) {
+/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void}} props */
+export function Overlay({path, weight, isru, setIsru, thrust, setThrust}) {
   return e(React.Fragment, null,
     PathInfo({path, weight}),
-    VehicleInfo({isru, setIsru}),
+    VehicleInfo({isru, setIsru, thrust, setThrust}),
   )
 }

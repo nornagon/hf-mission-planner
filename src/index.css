@@ -42,39 +42,36 @@ canvas { display: block; }
   border-top: 4px solid white;
   border-left: 4px solid white;
   border-top-left-radius: 8px;
-  width: 200px;
+  width: 260px;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
 }
 
 .VehicleInfo .field {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 .VehicleInfo .label {
   font-weight: bold;
+  letter-spacing: 0.02em;
+}
+.VehicleInfo .label-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
-  line-height: 1;
-  transform: rotate(-90deg);
-  transform-origin: center;
+  justify-content: space-between;
+  align-items: baseline;
 }
 .VehicleInfo .isru-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
-  flex: 1;
 }
 .VehicleInfo .isru-button {
-  flex: 1;
-  min-width: 0;
   padding: 10px 0;
   background: #111;
   color: white;
@@ -88,4 +85,78 @@ canvas { display: block; }
 }
 .VehicleInfo .isru-button:active {
   transform: translateY(1px);
+}
+.VehicleInfo .thrust-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.VehicleInfo input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: black;
+  border: 2px solid white;
+  border-radius: 999px;
+  padding: 0;
+}
+.VehicleInfo input[type="number"] {
+  width: 80px;
+  padding: 6px 8px;
+  background: #0a0a0a;
+  border: 2px solid white;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+}
+.VehicleInfo input[type="number"]::-webkit-inner-spin-button,
+.VehicleInfo input[type="number"]::-webkit-outer-spin-button {
+  filter: invert(1);
+}
+
+.VehicleInfo input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid black;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+  margin-top: -4px;
+}
+.VehicleInfo input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid black;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+.VehicleInfo input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px;
+  background: black;
+  border: none;
+  border-radius: 999px;
+  margin: 0 8px;
+}
+.VehicleInfo input[type="range"]::-moz-range-track {
+  height: 10px;
+  background: black;
+  border: none;
+  border-radius: 999px;
+  margin: 0 8px;
+}
+.VehicleInfo input[type="range"]::-ms-track {
+  height: 12px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+.VehicleInfo input[type="range"]::-ms-fill-lower,
+.VehicleInfo input[type="range"]::-ms-fill-upper {
+  background: #1a1a1a;
+  border: 1px solid white;
+  border-radius: 999px;
 }

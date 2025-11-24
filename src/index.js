@@ -540,9 +540,18 @@ function nodeWeight(u, v) {
   return [burns, turns, hazards, radHazards, 1]
 }
 
+const PATH_ID = Symbol('pathId')
+
 /** @param {PathNode} p */
 function pathId(p) {
-  return p.done ? p.node : JSON.stringify(p)
+  if (p[PATH_ID]) return p[PATH_ID]
+  // Fast, collision-resistant encoding for path state.
+  const id = p.done
+    ? p.node
+    : `s:${p.node}|${p.dir ?? ''}|${p.bonus}|${p.burnsRemaining}|${p.wait ? 1 : 0}`
+  // Cache on the object; symbol property stays non-enumerable in JSON/stringify.
+  Object.defineProperty(p, PATH_ID, {value: id})
+  return id
 }
 
 /** @param {string} fromId */

@@ -429,36 +429,41 @@ function allowed(u, v, id, previous) {
 function getNeighbors(p) {
   // Done is a terminal state.
   if (p.done) return [];
-  const {node, dir, bonus} = p
+  const {node, dir, bonus, burnsRemaining, wait} = p
   /** @type {PathNode[]} */
-  const ns = [{node, dir: null, bonus: 0, done: true}] // Ending the turn is always valid. TODO: not on a lander burn!
+  const ns = [{node, dir: null, bonus: 0, done: true, burnsRemaining}] // Ending the turn is always valid. TODO: not on a lander burn!
   const { edgeLabels, points } = mapData
-  if (edgeLabels[node]) {
-    Object.keys(edgeLabels[node]).forEach(otherNode => {
+  if (edgeLabels[node] && dir != null && !wait) {
+    for (const otherNode of Object.keys(edgeLabels[node])) {
       if (edgeLabels[node][otherNode] !== dir) {
         // Burn through a Hohmann.
         const directionChangeCost = edgeLabels[node][otherNode] === '0' ? 0 : 2
-        const bonusAfterDirectionChangeBurn = Math.max(bonus - directionChangeCost, 0)
-        ns.push({node: otherNode, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
+        const bonusAfterHohmann = Math.max(bonus - directionChangeCost, 0)
+        const bonusBurnsUsed = bonus - bonusAfterHohmann
+        const burnsRemainingAfterHohmann = burnsRemaining - directionChangeCost + bonusBurnsUsed
+        const otherNodeType = points[otherNode].type
+        const newDir = otherNodeType === 'hohmann' || otherNodeType === 'decorative' ? edgeLabels[node][otherNode] : null
+        ns.push({node: otherNode, dir: newDir, bonus: bonusAfterHohmann, burnsRemaining: burnsRemainingAfterHohmann})
       }
-    })
-  }
-  if (bonus > 0 || dir != null) {
-    // Wait a turn.
-    ns.push({node, dir: null, bonus: 0, wait: true})
-  }
-  mapData.neighborsOf(node).forEach(other => {
-    if (edgeLabels[other] && edgeLabels[other][node] === '0') {
-      return
     }
-    if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir) {
+  }
+  if (!wait && (points[node].type === 'hohmann' || (points[node].type === 'burn' && burnsRemaining === 0))) {
+    // Wait a turn.
+    ns.push({node, dir: null, bonus: 0, wait: true, burnsRemaining: thrust})
+  }
+  for (const other of mapData.neighborsOf(node)) {
+    if (edgeLabels[other] && edgeLabels[other][node] === '0')
+      continue
+    if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir || dir == null) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? 1 : 0
       const flybyBoost = points[other].type === 'flyby' || (points[other].type === 'venus' && venusFlybyAvailable) ? points[other].flybyBoost : 0
       const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
-      ns.push({node: other, dir, bonus: bonusAfterEntry})
+      const bonusUsed = Math.max(bonus - bonusAfterEntry, 0)
+      if (burnsRemaining >= entryCost - bonusUsed)
+        ns.push({node: other, dir, bonus: bonusAfterEntry, burnsRemaining: burnsRemaining - (entryCost - bonusUsed)})
     }
-  })
+  }
   return ns
 }
 
@@ -492,18 +497,9 @@ const tupleNs = {
 
 /** @param {PathNode} u @param {PathNode} v */
 function burnWeight(u, v) {
-  const {node: uId, dir: uDir, bonus: uBonus} = u
-  const {node: vId, dir: vDir, bonus: vBonus} = v
-  const { points } = mapData
-  let burnCost = 0
-  if (points[vId].type === 'burn') {
-    burnCost += 1
-  }
-  if (points[uId].type === 'hohmann' && uDir != null && vDir != null && uDir !== vDir) {
-    burnCost += 2
-  }
-  const bonusUsed = Math.max(0, uBonus - vBonus)
-  return Math.max(0, burnCost - bonusUsed)
+  const {burnsRemaining: uBurnsRemaining} = u
+  const {burnsRemaining: vBurnsRemaining} = v
+  return vBurnsRemaining < uBurnsRemaining ? uBurnsRemaining - vBurnsRemaining : 0
 }
 
 /** @param {PathNode} u @param {PathNode} v */
@@ -538,7 +534,7 @@ function radHazardWeight(u, v) {
 /** @param {PathNode} u @param {PathNode} v @returns {number[]} */
 function nodeWeight(u, v) {
   const burns = burnWeight(u, v)
-  const turns = turnWeight(u, v) // Assuming infinite thrust and no waiting...
+  const turns = turnWeight(u, v)
   const hazards = hazardWeight(u, v)
   const radHazards = radHazardWeight(u, v)
   return [burns, turns, hazards, radHazards, 1]
@@ -566,7 +562,7 @@ function findPath(fromId) {
   // point: {node: string; dir: string?, id: string}
   console.time('calculating paths')
 
-  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0})
+  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0, burnsRemaining: thrust})
   const pathData = dijkstra(getNeighbors, nodeWeight, tupleNs, pathId, source, allowed)
 
   console.timeEnd('calculating paths')
@@ -581,7 +577,7 @@ function findPath(fromId) {
  * @returns {PathNode[]|undefined}
  */
 function drawPath({ distance, previous }, fromId, toId) {
-  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0})
+  const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0, burnsRemaining: thrust})
 
   let shorterTo = /** @type {PathNode} */ ({node: toId, dir: null, bonus: 0, done: true})
   let shorterToId = pathId(shorterTo)
@@ -630,8 +626,15 @@ function setIsru(e) {
 /** @param {number} value */
 function setThrust(value) {
   const rounded = Math.round(value)
-  const clamped = Math.max(0, Math.min(15, rounded))
+  const clamped = Math.max(1, Math.min(15, rounded))
   thrust = clamped
+  const source = pathOrigin ?? highlightedPath?.[0].node
+  if (source) {
+    pathData = findPath(source)
+    const pathDestination = highlightedPath?.[highlightedPath.length - 1].node
+    if (pathDestination)
+      highlightedPath = drawPath(pathData, source, pathDestination)
+  }
   draw()
 }
 

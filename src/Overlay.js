@@ -52,7 +52,7 @@ function VehicleInfo({isru, setIsru, thrust, setThrust}) {
       e('div', {className: 'thrust-inputs'},
         e('input', {
           type: 'range',
-          min: 0,
+          min: 1,
           max: 15,
           step: 1,
           value: thrust,
@@ -60,7 +60,7 @@ function VehicleInfo({isru, setIsru, thrust, setThrust}) {
         }),
         e('input', {
           type: 'number',
-          min: 0,
+          min: 1,
           max: 15,
           step: 1,
           value: thrust,

@@ -384,6 +384,7 @@ window.onkeydown = e => {
 }
 
 /**
+ * Are you allowed to go to u from v, given the path previous?
  * @param {PathNode} u
  * @param {PathNode} v
  * @param {(node: PathNode) => string} id
@@ -393,21 +394,34 @@ window.onkeydown = e => {
 function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
+  
+  // Changing state without moving is permitted. We trust getNeighbors to
+  // prevent infinite cycles.
   if (uId === vId) return true
-  if ((id(u) in previous) && mapData.points[u.node].type === 'site') {
+
+  /** @param {PathNode} n */
+  const prev = (n) => previous[id(n)]
+
+  if (prev(u) && mapData.points[u.node].type === 'site') {
     // Once you enter a site, your turn ends.
     return false
   }
-  // Find the last node we were in.
+  
+  // Visiting a node we've previously left in the same direction is forbidden.
+
+  // First, walk back in the path until we find a different node.
   let n = u
-  let p
-  while (p = previous[id(n)]) {
-    if (p.node !== uId) break
-    n = p
+  while (prev(n)?.node === uId) {
+    n = prev(n)
   }
-  // If the last node we entered is the same as where we just came from, this
-  // transition is forbidden. (H4e. No U-Turns)
-  return !p || p.node !== vId
+  
+  // Then, walk the whole rest of the path. If we find vId anywhere with the
+  // same direction or null direction, filter it out to prevent a loop.
+  do {
+    if (n.node === vId && (n.dir === v.dir || n.dir == null)) return false
+    n = prev(n)
+  } while (n)
+  return true
 }
 
 /** @param {PathNode} p @returns {PathNode[]} */

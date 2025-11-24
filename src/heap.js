@@ -112,6 +112,12 @@ class Heap {
 
   /** Retrieves and removes the root value of this heap. Returns undefined if the heap is empty. */
   remove() {
+    const entry = this.removeEntry()
+    return entry && entry.getValue()
+  }
+
+  /** Retrieves and removes the root entry (key + value) of this heap. Returns undefined if the heap is empty. */
+  removeEntry() {
     const nodes = this.nodes_
     const count = nodes.length
     const rootNode = nodes[0]
@@ -123,7 +129,7 @@ class Heap {
       nodes[0] = nodes.pop()
       this.moveDown_(0)
     }
-    return rootNode.getValue()
+    return rootNode
   }
 
   /** Retrieves but does not remove the root value of this heap. Returns undefined if the heap is empty. */

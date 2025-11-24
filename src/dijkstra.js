@@ -20,11 +20,15 @@ export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source
   /** @type {Heap<Weight, Node>} */
   const q = new Heap(null, lessThan)
   q.insert(zero, source)
-  const inQ = new Set([id(source)])
   while (!q.isEmpty()) {
-    const u = q.remove()
+    const entry = q.removeEntry()
+    if (!entry) break
+    const u = entry.getValue()
     const idu = id(u)
-    inQ.delete(idu)
+    // Drop stale queue entries that no longer match the best known distance.
+    if (distance[idu] !== undefined && lessThan(distance[idu], entry.getKey())) {
+      continue
+    }
 
     for (const v of getNeighbors(u)) {
       if (!allowed(u, v, id, previous)) continue
@@ -35,16 +39,8 @@ export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source
       if (dv === undefined || lessThan(alt, dv)) {
         distance[idv] = alt
         previous[idv] = u
-        if (inQ.has(idv)) {
-          // already in the queue, adjust its priority
-          const index = q.nodes_.findIndex(n => id(n.getValue()) === idv)
-          if (index < 0) throw new Error('programming error, inQ did not match q')
-          q.nodes_[index].key_ = alt
-          q.moveUp_(index)
-        } else {
-          q.insert(alt, v)
-          inQ.add(idv)
-        }
+        // Push a new entry instead of decreasing key; stale entries are skipped when popped.
+        q.insert(alt, v)
       }
     }
   }

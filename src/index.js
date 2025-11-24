@@ -656,6 +656,21 @@ function draw() {
   ctx.lineWidth = 2
   const nearestToCursor = nearestPoint(mousePos.x, mousePos.y)
   if (editing) {
+    const unlabeledHohmannEdges = mapData.hohmannEdgesMissingLabels()
+    const unlabeledEdgeMidpoints = []
+    const seenUnlabeledEdges = new Set
+    for (const { node, neighbor } of unlabeledHohmannEdges) {
+      const key = [node, neighbor].sort().join(':')
+      if (seenUnlabeledEdges.has(key)) continue
+      seenUnlabeledEdges.add(key)
+      const a = points[node]
+      const b = points[neighbor]
+      if (!a || !b) continue
+      unlabeledEdgeMidpoints.push({
+        x: (a.x + b.x) / 2,
+        y: (a.y + b.y) / 2,
+      })
+    }
     const ce = nearestEdge(mousePos.x, mousePos.y)
     edges.forEach(e => {
       const [a, b] = e.split(":")
@@ -671,6 +686,44 @@ function draw() {
       ctx.lineTo(pb.x * width, pb.y * height)
       ctx.stroke()
     })
+    if (unlabeledEdgeMidpoints.length) {
+      ctx.save()
+      const glowRadius = 22
+      const innerRadius = 16
+      const fillRadius = 12
+      const glowAlpha = 0.6
+      const fillAlpha = 0.35
+      unlabeledEdgeMidpoints.forEach(({x, y}) => {
+        const cx = x * width
+        const cy = y * height
+        // Outer glow
+        ctx.save()
+        ctx.strokeStyle = `rgba(255,0,0,${glowAlpha})`
+        ctx.lineWidth = 14
+        ctx.shadowBlur = 12
+        ctx.shadowColor = `rgba(255,0,0,0.8)`
+        ctx.beginPath()
+        ctx.arc(cx, cy, glowRadius, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+        // Inner ring
+        ctx.save()
+        ctx.strokeStyle = '#ffefef'
+        ctx.lineWidth = 4
+        ctx.beginPath()
+        ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+        // Center fill
+        ctx.save()
+        ctx.fillStyle = `rgba(255,0,0,${fillAlpha})`
+        ctx.beginPath()
+        ctx.arc(cx, cy, fillRadius, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      })
+      ctx.restore()
+    }
     for (let pId in points) {
       const p = points[pId]
       ctx.fillStyle = 'transparent'

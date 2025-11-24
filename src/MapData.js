@@ -74,6 +74,21 @@ export class MapData {
     this._edgeLabels[a][b] = label
   }
 
+  /** @returns {{node: string, neighbor: string}[]} */
+  hohmannEdgesMissingLabels() {
+    const unlabeled = []
+    for (const [nodeId, point] of Object.entries(this._points)) {
+      if (point.type !== 'hohmann') continue
+      const labels = this._edgeLabels[nodeId]
+      for (const neighborId of this.neighborsOf(nodeId)) {
+        if (!labels || !(neighborId in labels)) {
+          unlabeled.push({ node: nodeId, neighbor: neighborId })
+        }
+      }
+    }
+    return unlabeled
+  }
+
   /** @param {MapDataJSON} json */
   static fromJSON(json) {
     const mapData = new MapData

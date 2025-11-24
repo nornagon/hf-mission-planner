@@ -412,8 +412,11 @@ function allowed(u, v, id, previous) {
 
 /** @param {PathNode} p @returns {PathNode[]} */
 function getNeighbors(p) {
+  // Done is a terminal state.
+  if (p.done) return [];
   const {node, dir, bonus} = p
-  const ns = []
+  /** @type {PathNode[]} */
+  const ns = [{node, dir: null, bonus: 0, done: true}] // Ending the turn is always valid. TODO: not on a lander burn!
   const { edgeLabels, points } = mapData
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
@@ -535,7 +538,7 @@ function nodeWeight(u, v) {
 
 /** @param {PathNode} p */
 function pathId(p) {
-  return p.dir != null || p.bonus ? `${p.node}@${p.dir}@${p.bonus}` : p.node
+  return p.done ? p.node : JSON.stringify(p)
 }
 
 /** @param {string} fromId */

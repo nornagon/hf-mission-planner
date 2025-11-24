@@ -394,13 +394,13 @@ window.onkeydown = e => {
 function allowed(u, v, id, previous) {
   const {node: uId} = u
   const {node: vId} = v
+
+  /** @param {PathNode} n */
+  const prev = (n) => previous[id(n)]
   
   // Changing state without moving is permitted. We trust getNeighbors to
   // prevent infinite cycles.
   if (uId === vId) return true
-
-  /** @param {PathNode} n */
-  const prev = (n) => previous[id(n)]
 
   if (prev(u) && mapData.points[u.node].type === 'site') {
     // Once you enter a site, your turn ends.
@@ -410,17 +410,18 @@ function allowed(u, v, id, previous) {
   // Visiting a node we've previously left in the same direction is forbidden.
 
   // First, walk back in the path until we find a different node.
-  let n = u
-  while (prev(n)?.node === uId) {
+  let n = prev(u)
+  while (n?.node === uId) {
     n = prev(n)
   }
   
   // Then, walk the whole rest of the path. If we find vId anywhere with the
   // same direction or null direction, filter it out to prevent a loop.
-  do {
-    if (n.node === vId && (n.dir === v.dir || n.dir == null)) return false
+  while (n) {
+    if (n.node === vId && (n.dir === v.dir || n.dir == null))
+      return false
     n = prev(n)
-  } while (n)
+  }
   return true
 }
 
@@ -435,17 +436,16 @@ function getNeighbors(p) {
   if (edgeLabels[node]) {
     Object.keys(edgeLabels[node]).forEach(otherNode => {
       if (edgeLabels[node][otherNode] !== dir) {
+        // Burn through a Hohmann.
         const directionChangeCost = edgeLabels[node][otherNode] === '0' ? 0 : 2
         const bonusAfterDirectionChangeBurn = Math.max(bonus - directionChangeCost, 0)
-        ns.push({node, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
+        ns.push({node: otherNode, dir: edgeLabels[node][otherNode], bonus: bonusAfterDirectionChangeBurn})
       }
     })
   }
   if (bonus > 0 || dir != null) {
-    // you can always throw away your extra burns if you want.
-    // this also allows the path finder to not have to search for the
-    // destination node at different amounts of bonus.
-    ns.push({node, dir: null, bonus: 0})
+    // Wait a turn.
+    ns.push({node, dir: null, bonus: 0, wait: true})
   }
   mapData.neighborsOf(node).forEach(other => {
     if (edgeLabels[other] && edgeLabels[other][node] === '0') {
@@ -492,30 +492,24 @@ const tupleNs = {
 
 /** @param {PathNode} u @param {PathNode} v */
 function burnWeight(u, v) {
-  const {node: uId, dir: uDir, bonus} = u
-  const {node: vId, dir: vDir} = v
+  const {node: uId, dir: uDir, bonus: uBonus} = u
+  const {node: vId, dir: vDir, bonus: vBonus} = v
   const { points } = mapData
+  let burnCost = 0
   if (points[vId].type === 'burn') {
-    return bonus > 0 && !points[vId].landing ? 0 : 1
-  } else if (points[vId].type === 'hohmann') {
-    return uId === vId && uDir != null && vDir != null && uDir !== vDir ? Math.max(0, 2 - bonus) : 0;
-  } else if (points[vId].type === 'flyby' || points[vId].type === 'venus') {
-    return 0
-  } else {
-    return 0
+    burnCost += 1
   }
+  if (points[uId].type === 'hohmann' && uDir != null && vDir != null && uDir !== vDir) {
+    burnCost += 2
+  }
+  const bonusUsed = Math.max(0, uBonus - vBonus)
+  return Math.max(0, burnCost - bonusUsed)
 }
 
 /** @param {PathNode} u @param {PathNode} v */
 function turnWeight(u, v) {
-  const {node: uId, dir: uDir} = u
-  const {node: vId, dir: vDir} = v
-  const { points } = mapData
-  if (points[vId].type === 'hohmann') {
-    if (uId === vId && uDir != null && vDir == null) return 1
-    return 0
-  }
-  return 0
+  const {wait} = v
+  return wait ? 1 : 0
 }
 
 /** @param {PathNode} u @param {PathNode} v */
@@ -589,7 +583,7 @@ function findPath(fromId) {
 function drawPath({ distance, previous }, fromId, toId) {
   const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0})
 
-  let shorterTo = /** @type {PathNode} */ ({node: toId, dir: null, bonus: 0})
+  let shorterTo = /** @type {PathNode} */ ({node: toId, dir: null, bonus: 0, done: true})
   let shorterToId = pathId(shorterTo)
 
   if (shorterToId in distance) {

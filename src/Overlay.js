@@ -20,8 +20,10 @@ function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
 
 const isruLevels = [0, 1, 2, 3, 4]
 
-/** @param {{isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void}} param0 */
-function VehicleInfo({isru, setIsru, thrust, setThrust}) {
+const siteTypeOptions = ['C', 'S', 'M', 'V', 'D', 'H']
+
+/** @param {{isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} param0 */
+function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
   /** @param {string} value */
   const updateThrust = (value) => {
     const n = Number(value)
@@ -69,13 +71,30 @@ function VehicleInfo({isru, setIsru, thrust, setThrust}) {
         }),
       )
     )
+    ,
+    e('div', {className: 'field', role: 'group', 'aria-label': 'Site types'},
+      e('div', {className: 'label-row'},
+        e('span', {className: 'label'}, 'Site types'),
+      ),
+      e('div', {className: 'site-type-buttons'},
+        siteTypeOptions.map(type =>
+          e('button', {
+            key: type,
+            type: 'button',
+            className: 'site-type-button' + (enabledSiteTypes.has(type) ? ' selected' : ''),
+            'aria-pressed': enabledSiteTypes.has(type),
+            onClick: () => toggleSiteType(type),
+          }, type)
+        )
+      )
+    )
   )
 }
 
-/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void}} props */
-export function Overlay({path, weight, isru, setIsru, thrust, setThrust}) {
+/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
+export function Overlay({path, weight, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
   return e(React.Fragment, null,
     PathInfo({path, weight}),
-    VehicleInfo({isru, setIsru, thrust, setThrust}),
+    VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}),
   )
 }

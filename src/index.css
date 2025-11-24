@@ -86,6 +86,26 @@ canvas { display: block; }
 .VehicleInfo .isru-button:active {
   transform: translateY(1px);
 }
+.VehicleInfo .site-type-buttons {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.VehicleInfo .site-type-button {
+  padding: 10px 0;
+  background: #111;
+  color: white;
+  border: 2px solid white;
+  border-radius: 6px;
+  font-size: 18px;
+}
+.VehicleInfo .site-type-button.selected {
+  background: white;
+  color: black;
+}
+.VehicleInfo .site-type-button:active {
+  transform: translateY(1px);
+}
 .VehicleInfo .thrust-inputs {
   display: flex;
   align-items: center;

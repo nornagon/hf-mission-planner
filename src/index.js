@@ -624,8 +624,29 @@ function siteSizeValue(p) {
   return Number.isFinite(n) ? n : null
 }
 
+/** @param {MapPoint} p @returns {string|null} */
+function siteTypeValue(p) {
+  if (!p.siteSize) return null
+  const match = String(p.siteSize).match(/[A-Za-z]+$/)
+  if (!match) return null
+  const letters = match[0]
+  if (!letters.length) return null
+  return letters[letters.length - 1].toUpperCase()
+}
+
+/** @param {MapPoint} p @returns {boolean} */
+function isSiteTypeEnabled(p) {
+  const type = siteTypeValue(p)
+  if (!type) return true
+  return enabledSiteTypes.has(type)
+}
+
+const siteTypeOptions = ['C', 'S', 'M', 'V', 'D', 'H']
+
 let isru = 0
 let thrust = 12
+/** @type {Set<string>} */
+let enabledSiteTypes = new Set(siteTypeOptions)
 /** @param {number} e */
 function setIsru(e) {
   isru = e
@@ -644,6 +665,16 @@ function setThrust(value) {
     if (pathDestination)
       highlightedPath = drawPath(pathData, source, pathDestination)
   }
+  draw()
+}
+
+/** @param {string} type */
+function toggleSiteType(type) {
+  if (!siteTypeOptions.includes(type)) return
+  const next = new Set(enabledSiteTypes)
+  if (next.has(type)) next.delete(type)
+  else next.add(type)
+  enabledSiteTypes = next
   draw()
 }
 
@@ -883,7 +914,7 @@ function draw() {
         const siteWater = Number(p.siteWater ?? 0)
         const siteSize = siteSizeValue(p)
         const hasThrust = siteSize != null && thrust > siteSize
-        if (p.type === 'site' && siteWater >= isru && hasThrust) {
+        if (p.type === 'site' && siteWater >= isru && hasThrust && isSiteTypeEnabled(p)) {
           ctx.save()
           ctx.font = 'bold 70px helvetica'
           ctx.shadowColor = 'black'
@@ -950,7 +981,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru, thrust, setThrust}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
 }
 
 /**

@@ -122,7 +122,8 @@ canvas { display: block; }
   padding: 0;
 }
 .VehicleInfo input[type="number"] {
-  width: 80px;
+  width: 40px;
+  width: min-content;
   padding: 6px 8px;
   background: #0a0a0a;
   border: 2px solid white;

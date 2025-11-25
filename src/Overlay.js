@@ -32,21 +32,6 @@ function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggle
   }
 
   return e('div', {className: 'VehicleInfo'},
-    e('div', {className: 'field', role: 'group', 'aria-label': 'ISRU level'},
-      e('span', {className: 'label'}, 'ISRU'),
-      e('div', {className: 'isru-buttons'},
-        isruLevels.map(level =>
-          e('button', {
-            key: level,
-            type: 'button',
-            className: 'isru-button' + (isru === level ? ' selected' : ''),
-            'aria-pressed': isru === level,
-            onClick: () => setIsru(level),
-          }, level)
-        )
-      )
-    )
-    ,
     e('div', {className: 'field', role: 'group', 'aria-label': 'Thrust'},
       e('div', {className: 'label-row'},
         e('span', {className: 'label'}, 'Thrust')
@@ -70,11 +55,24 @@ function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggle
           onChange: (ev) => updateThrust(ev.target.value),
         }),
       )
-    )
-    ,
-    e('div', {className: 'field', role: 'group', 'aria-label': 'Site types'},
+    ),
+    e('div', {className: 'field', role: 'group', 'aria-label': 'Site Hydration'},
+      e('span', {className: 'label'}, 'Site Hydration'),
+      e('div', {className: 'isru-buttons'},
+        isruLevels.map(level =>
+          e('button', {
+            key: level,
+            type: 'button',
+            className: 'isru-button' + (isru === level ? ' selected' : ''),
+            'aria-pressed': isru === level,
+            onClick: () => setIsru(level),
+          }, `${level}+`)
+        )
+      )
+    ),
+    e('div', {className: 'field', role: 'group', 'aria-label': 'Spectral Type'},
       e('div', {className: 'label-row'},
-        e('span', {className: 'label'}, 'Site types'),
+        e('span', {className: 'label'}, 'Spectral Type'),
       ),
       e('div', {className: 'site-type-buttons'},
         siteTypeOptions.map(type =>

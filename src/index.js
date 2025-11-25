@@ -127,6 +127,7 @@ canvas.onclick = e => {
 /** @param {string} originId */
 function beginPathing(originId) {
   pathOrigin = originId
+  highlightedPath = null
   pathData = findPath(originId)
 }
 
@@ -544,6 +545,7 @@ const PATH_ID = Symbol('pathId')
 
 /** @param {PathNode} p */
 function pathId(p) {
+  // @ts-ignore
   if (p[PATH_ID]) return p[PATH_ID]
   // Fast, collision-resistant encoding for path state.
   const id = p.done

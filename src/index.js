@@ -466,9 +466,9 @@ function getNeighbors(p) {
       continue
     if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir || dir == null) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
-      const entryCost = points[other].type === 'burn' ? 1 : 0
+      const entryCost = points[other].type === 'burn' ? points[other].landing ?? 1 : 0
       const flybyBoost = points[other].type === 'flyby' || (points[other].type === 'venus' && venusFlybyAvailable) ? points[other].flybyBoost : 0
-      const bonusAfterEntry = Math.max(bonus - entryCost + flybyBoost, 0)
+      const bonusAfterEntry = points[other].landing ? bonus : Math.max(bonus - entryCost + flybyBoost, 0)
       const bonusUsed = Math.max(bonus - bonusAfterEntry, 0)
       if (burnsRemaining >= entryCost - bonusUsed)
         ns.push({node: other, dir, bonus: bonusAfterEntry, burnsRemaining: burnsRemaining - (entryCost - bonusUsed)})
@@ -974,8 +974,8 @@ function draw() {
             '#f03b20',
             '#bd0026',
           ]
-          ctx.fillStyle = colors[Math.min(colors.length - 1, weight)]
-          ctx.fillText(String(weight), p.x * width, p.y * height)
+          ctx.fillStyle = colors[Math.min(colors.length - 1, Math.ceil(weight))]
+          ctx.fillText(formatBurns(weight), p.x * width, p.y * height)
           ctx.restore()
         }
       }
@@ -1044,6 +1044,13 @@ function draw() {
   }
   const weight = pathWeight(highlightedPath)
   ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
+}
+
+/** @param {number} burns */
+function formatBurns(burns) {
+  const wholeBurns = Math.floor(burns)
+  const halfBurns = burns - wholeBurns
+  return `${wholeBurns > 0 ? wholeBurns : ''}${halfBurns > 0 ? '½' : ''}`
 }
 
 /**

@@ -20,7 +20,7 @@ declare module '*.json' {
   export default value
 }
 
-type PointType = 'hohmann'|'lagrange'|'burn'|'decorative'|'radhaz'|'venus'|'site'|'flyby'
+type PointType = 'hohmann'|'lagrange'|'burn'|'decorative'|'radhaz'|'venus'|'site'
 
 interface MapPoint {
   x: number

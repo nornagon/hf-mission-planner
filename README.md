@@ -25,9 +25,9 @@ If you're developing this tool you might want to edit the map data to fix errors
 - <kbd>L</kbd> - mark hovered node as Lagrange type.
 - <kbd>B</kbd> - mark hovered node as Burn type. Pressing <kbd>B</kbd> again will cycle through Lander burn, Half-lander burn and regular burn.
 - <kbd>R</kbd> - mark hovered node as Radhaz type.
-- <kbd>Y</kbd> - mark hovered node as Flyby type. Pressing <kbd>Y</kbd> again will cycle through (+1), (+2), (+3), (+4).
 - <kbd>S</kbd> - mark hovered node as Site type. You will be prompted for the name of the site. Pressing <kbd>S</kbd> again will allow you to edit the name of the site.
 - <kbd>D</kbd> - mark hovered node as decorative. Decorative nodes are used to make paths follow the underlying map, and have no semantic meaning.
+- <kbd>Y</kbd> - cycle hovered node's flyby boost. Pressing <kbd>Y</kbd> again will cycle through (+1), (+2), (+3), (+4). Most flyby nodes on the map are Lagrange-equivalents.
 - <kbd>Z</kbd> - mark hovered node as containing a hazard. Works on any node type; hazardousness is orthogonal to node type. Aerobrake nodes are modeled as hazard nodes.
 - <kbd>A</kbd> - link two nodes together. The first node which <kbd>A</kbd> is pressed on is stored, and no link is made until a second node is selected by pressing <kbd>A</kbd> on it.
 - <kbd>J</kbd> - download a formatted JSON export of the current map data.

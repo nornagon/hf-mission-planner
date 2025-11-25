@@ -328,11 +328,13 @@ window.onkeydown = e => {
         changed()
       }
     }
-    if (e.code === 'KeyY') { // Set point type to flyby / cycle boost size
+    if (e.code === 'KeyY') { // Set flyby boost / cycle boost size
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (closestId) {
-        mapData.points[closestId].type = 'flyby'
-        mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
+        const p = mapData.points[closestId]
+        p.flybyBoost = ((p.flybyBoost ?? 0) + 1) % 5
+        if (p.flybyBoost === 0)
+          delete p.flybyBoost
         changed()
       }
     }
@@ -468,7 +470,7 @@ function getNeighbors(p) {
     if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir || dir == null) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? points[other].landing ?? 1 : 0
-      const flybyBoost = points[other].type === 'flyby' || (points[other].type === 'venus' && venusFlybyAvailable) ? points[other].flybyBoost : 0
+      const flybyBoost = points[other].type === 'venus' && !venusFlybyAvailable ? 0 : points[other].flybyBoost ?? 0
       const bonusAfterEntry = points[other].landing ? bonus : Math.max(bonus - entryCost + flybyBoost, 0)
       const bonusUsed = Math.max(bonus - bonusAfterEntry, 0)
       if (burnsRemaining >= entryCost - bonusUsed)
@@ -826,7 +828,7 @@ function draw() {
       ctx.strokeStyle = 'white'
       if (p.type === 'hohmann') {
         ctx.fillStyle = 'green'
-      } else if (p.type === 'lagrange' || p.type === 'flyby') {
+      } else if (p.type === 'lagrange') {
         ctx.fillStyle = 'transparent'
         ctx.strokeStyle = '#c66932'
         if (p.hazard) {
@@ -874,7 +876,8 @@ function draw() {
         ctx.fillText('☠︎', p.x * width, p.y * height)
         ctx.restore()
       }
-      if (p.type === 'flyby' || p.type === 'venus') {
+      if ((p.flybyBoost ?? 0) > 0) {
+        const boost = p.flybyBoost
         ctx.save()
         ctx.fillStyle = 'white'
         ctx.shadowOffsetX = 1
@@ -883,7 +886,7 @@ function draw() {
         ctx.font = '14px helvetica'
         ctx.textBaseline = 'middle'
         ctx.textAlign = 'center'
-        ctx.fillText(`+${p.flybyBoost}`, p.x * width, p.y * height)
+        ctx.fillText(`+${boost}`, p.x * width, p.y * height)
         ctx.restore()
       }
       if (p.type === 'site') {

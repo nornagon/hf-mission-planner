@@ -447,13 +447,14 @@ function getNeighbors(p) {
     for (const otherNode of Object.keys(edgeLabels[node])) {
       if (edgeLabels[node][otherNode] !== dir) {
         // Burn through a Hohmann.
-        const directionChangeCost = edgeLabels[node][otherNode] === '0' ? 0 : 2
+        const directionChangeCost = (edgeLabels[node][otherNode] === '0' ? 0 : 2) + (points[otherNode].type === 'burn' ? (points[otherNode].landing ?? 1) : 0)
         const bonusAfterHohmann = Math.max(bonus - directionChangeCost, 0)
         const bonusBurnsUsed = bonus - bonusAfterHohmann
         const burnsRemainingAfterHohmann = burnsRemaining - directionChangeCost + bonusBurnsUsed
         const otherNodeType = points[otherNode].type
         const newDir = otherNodeType === 'hohmann' || otherNodeType === 'decorative' ? edgeLabels[node][otherNode] : null
-        ns.push({node: otherNode, dir: newDir, bonus: bonusAfterHohmann, burnsRemaining: burnsRemainingAfterHohmann})
+        if (directionChangeCost <= burnsRemaining)
+          ns.push({node: otherNode, dir: newDir, bonus: bonusAfterHohmann, burnsRemaining: burnsRemainingAfterHohmann})
       }
     }
   }
@@ -551,14 +552,20 @@ function segmentWeight(u, v) {
   return 1
 }
 
-/** @param {PathNode} u @param {PathNode} v @returns {number[]} */
-function nodeWeight(u, v) {
+/** @param {PathNode} u @param {PathNode} v */
+function edgeWeights(u, v) {
   const burns = burnWeight(u, v)
   const turns = turnWeight(u, v)
   const hazards = hazardWeight(u, v)
   const radHazards = radHazardWeight(u, v)
-  const segment = segmentWeight(u, v)
-  return [burns, turns, hazards, radHazards, segment]
+  const segments = segmentWeight(u, v)
+  return {burns, turns, hazards, radHazards, segments}
+}
+
+/** @param {PathNode} u @param {PathNode} v @returns {number[]} */
+function nodeWeight(u, v) {
+  const weights = edgeWeights(u, v)
+  return [...metricPriority.map(key => weights[key]), weights.segments]
 }
 
 const PATH_ID = Symbol('pathId')
@@ -626,15 +633,20 @@ function drawPath({ distance, previous }, fromId, toId) {
   }
 }
 
-/** @param {PathNode[]|null|undefined} path @returns {number[]} */
+/** @param {PathNode[]|null|undefined} path */
 function pathWeight(path) {
-  let weight = tupleNs.zero
-  if (path) {
-    for (let i = 1; i < path.length; i++) {
-      weight = tupleNs.add(weight, nodeWeight(path[i-1], path[i]))
-    }
+  /** @type {{burns: number, turns: number, hazards: number, radHazards: number}} */
+  const total = {burns: 0, turns: 0, hazards: 0, radHazards: 0}
+  if (!path) return total
+
+  for (let i = 1; i < path.length; i++) {
+    const edge = edgeWeights(path[i-1], path[i])
+    total.burns += edge.burns
+    total.turns += edge.turns
+    total.hazards += edge.hazards
+    total.radHazards += edge.radHazards
   }
-  return weight
+  return total
 }
 
 /** @param {MapPoint} p @returns {number|null} */
@@ -664,6 +676,17 @@ function isSiteTypeEnabled(p) {
 }
 
 const siteTypeOptions = ['C', 'S', 'M', 'V', 'D', 'H']
+
+/** @typedef {'burns'|'turns'|'hazards'|'radHazards'} MetricKey */
+/** @type {MetricKey[]} */
+let metricPriority = ['burns', 'turns', 'hazards', 'radHazards']
+/** @param {MetricKey} metric */
+function prioritizeMetric(metric) {
+  if (!metricPriority.includes(metric)) return
+  metricPriority = [metric, ...metricPriority.filter(m => m !== metric)]
+  recomputeHighlightedPath()
+  draw()
+}
 
 let isru = 0
 let thrust = 12
@@ -966,7 +989,7 @@ function draw() {
           ctx.textBaseline = 'middle'
           ctx.textAlign = 'center'
           const path = drawPath(pathData, pathOrigin, pId)
-          const weight = pathWeight(path)[0] ?? 0
+          const burns = pathWeight(path).burns ?? 0
           const colors = [
             '#ffffb2',
             '#fecc5c',
@@ -974,8 +997,8 @@ function draw() {
             '#f03b20',
             '#bd0026',
           ]
-          ctx.fillStyle = colors[Math.min(colors.length - 1, Math.ceil(weight))]
-          ctx.fillText(formatBurns(weight), p.x * width, p.y * height)
+          ctx.fillStyle = colors[Math.min(colors.length - 1, Math.ceil(burns))]
+          ctx.fillText(formatBurns(burns), p.x * width, p.y * height)
           ctx.restore()
         }
       }
@@ -1043,7 +1066,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
 }
 
 /** @param {number} burns */

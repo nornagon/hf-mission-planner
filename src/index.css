@@ -32,6 +32,26 @@ canvas { display: block; }
   padding: 16px;
   white-space: nowrap;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+.PathInfo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.PathInfo-label {
+  font-weight: bold;
+}
+.PathInfo-priorityButton {
+  color: white;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .VehicleInfo {

@@ -5,17 +5,35 @@ const e = React.createElement
 /** @param {number} n @param {string} sg @param {string} pl */
 const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
-/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number]}} props */
-function PathInfo({path, weight: [burns, turns, hazards, radhazards]}) {
+/** @typedef {'burns'|'turns'|'hazards'|'radHazards'} MetricKey */
+
+/** @param {{path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void}} props */
+function PathInfo({path, weight, metricPriority, prioritizeMetric}) {
   if (!path) return e('div')
-  else {
-    return e('div', {className: 'PathInfo'},
-      e('div', {}, `${pl(burns, 'burn', 'burns')}`),
-      e('div', {}, `${pl(turns, 'turn', 'turns')}`),
-      e('div', {}, `${pl(hazards, 'hazard', 'hazards')}`),
-      e('div', {}, `${pl(radhazards, 'rad hazard', 'rad hazards')}`),
-    )
+
+  const metricMeta = {
+    burns: {sg: 'burn', pl: 'burns'},
+    turns: {sg: 'turn', pl: 'turns'},
+    hazards: {sg: 'hazard', pl: 'hazards'},
+    radHazards: {sg: 'rad hazard', pl: 'rad hazards'},
   }
+  const orderedMetrics = metricPriority
+    .map(key => ({key, ...metricMeta[key]}))
+
+  return e('div', {className: 'PathInfo'},
+    orderedMetrics.map(({key, sg, pl: plural}) => {
+      const topPriority = metricPriority[0] === key
+      return e('div', {key, className: 'PathInfo-row'},
+        e('span', {className: 'PathInfo-label'}, `${pl(weight[key], sg, plural)}`),
+        topPriority ? null : e('button', {
+          type: 'button',
+          className: 'PathInfo-priorityButton' + (topPriority ? ' selected' : ''),
+          'aria-pressed': topPriority,
+          onClick: () => prioritizeMetric(key),
+        }, '⬆'),
+      )
+    }),
+  )
 }
 
 const isruLevels = [0, 1, 2, 3, 4]
@@ -89,10 +107,10 @@ function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggle
   )
 }
 
-/** @param {{path: PathNode[]|null, weight: [number, number, number, number, number], isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
-export function Overlay({path, weight, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
+/** @param {{path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
+export function Overlay({path, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
   return e(React.Fragment, null,
-    PathInfo({path, weight}),
+    PathInfo({path, weight, metricPriority, prioritizeMetric}),
     VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}),
   )
 }

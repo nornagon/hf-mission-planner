@@ -9,6 +9,7 @@ import HF4Map from '../assets/hf4.jpg'
 import { dijkstra } from './dijkstra'
 import { Overlay } from './Overlay'
 import { MapData } from './MapData'
+import { createPanMomentum } from './panMomentum'
 
 /** @typedef {import('d3-zoom').ZoomTransform} ZoomTransform */
 
@@ -41,15 +42,16 @@ map.onload = () => {
       }
       return !e.ctrlKey && !e.button
     })
-    .on("zoom", e => zoomed(e.transform))
+  createPanMomentum({
+    zoomBehavior: z,
+    zoomTarget: document.documentElement,
+    applyTransform: ({x, y, k}) => {
+      main.style.transform = `translate(${x}px,${y}px) scale(${k})`
+      main.style.transformOrigin = '0 0'
+    },
+  })
   select(document.documentElement).call(z).call(z.translateTo, 0.85 * canvas.width, 0.80 * canvas.height)
   draw()
-}
-
-/** @param {ZoomTransform} param0 */
-function zoomed({x, y, k}) {
-  main.style.transform = `translate(${x}px,${y}px) scale(${k})`
-  main.style.transformOrigin = '0 0'
 }
 
 let editing = false

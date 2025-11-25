@@ -496,7 +496,7 @@ const ints = {
   /** @type {(a: number, b: number) => boolean} */ lessThan: (a, b) => a < b
 }
 
-/** @type {{zero: number[], add: (a: number[], b: number[]) => number[], lessThan: (a: number[], b: number[]) => boolean}} */
+/** @type {{zero: number[], add: (a: number[], b: number[]) => number[], lessThan: (a: number[], b: number[]) => boolean, equals: (a: number[], b: number[]) => boolean, lessThanEq: (a: number[], b: number[]) => boolean}} */
 const tupleNs = {
   zero: [],
   add: (a, b) => {
@@ -515,6 +515,16 @@ const tupleNs = {
       if (ai !== bi) return ai < bi
     }
     return false
+  },
+  equals: (a, b) => {
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) {
+      if ((a[i] ?? 0) !== (b[i] ?? 0)) return false
+    }
+    return true
+  },
+  lessThanEq: (a, b) => {
+    return tupleNs.lessThan(a, b) || tupleNs.equals(a, b)
   }
 }
 
@@ -580,6 +590,40 @@ function nodeWeight(u, v) {
   return [...metricPriority.map(key => weights[key]), weights.segments]
 }
 
+/** @typedef {{weight: number[], burnsRemaining: number, bonus: number}} DominanceEntry */
+/** @returns {(node: PathNode, weight: number[]) => boolean} */
+function makeDominancePrune() {
+  /** @param {PathNode} node */
+  const dominanceKey = (node) => {
+    const dir = node.dir ?? ''
+    const wait = node.wait ? 'w' : ''
+    const done = node.done ? 'd' : ''
+    return `${node.node}|${dir}|${wait}|${done}`
+  }
+  /** @type {Map<string, DominanceEntry[]>} */
+  const frontier = new Map
+  return (node, weight) => {
+    const key = dominanceKey(node)
+    const br = node.burnsRemaining ?? 0
+    const bonus = node.bonus ?? 0
+    const entries = frontier.get(key)
+
+    if (entries) {
+      for (const e of entries) {
+        if (tupleNs.lessThanEq(e.weight, weight) && e.burnsRemaining >= br && e.bonus >= bonus) {
+          return true
+        }
+      }
+      const kept = entries.filter(e => !(tupleNs.lessThanEq(weight, e.weight) && br >= e.burnsRemaining && bonus >= e.bonus))
+      kept.push({weight, burnsRemaining: br, bonus})
+      frontier.set(key, kept)
+    } else {
+      frontier.set(key, [{weight, burnsRemaining: br, bonus}])
+    }
+    return false
+  }
+}
+
 const PATH_ID = Symbol('pathId')
 
 /** @param {PathNode} p */
@@ -612,8 +656,9 @@ function findPath(fromId) {
   // point: {node: string; dir: string?, id: string}
   console.time('calculating paths')
 
+  const dominancePrune = makeDominancePrune()
   const source = /** @type {PathNode} */ ({node: fromId, dir: null, bonus: 0, burnsRemaining: thrust})
-  const pathData = dijkstra(getNeighbors, nodeWeight, tupleNs, pathId, source, allowed)
+  const pathData = dijkstra(getNeighbors, nodeWeight, tupleNs, pathId, source, allowed, dominancePrune)
 
   console.timeEnd('calculating paths')
 

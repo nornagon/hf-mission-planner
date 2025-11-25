@@ -9,9 +9,10 @@ import Heap from './heap'
  * @param {(node: Node) => string} id
  * @param {Node} source
  * @param {(u: Node, v: Node, id: (node: Node) => string, previous: Record<string, Node>) => boolean} allowed
+ * @param {(node: Node, weight: Weight) => boolean} [prune]
  * @returns {{distance: Record<string, Weight>, previous: Record<string, Node>}}
  */
-export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source, allowed) {
+export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source, allowed, prune = () => false) {
   /** @type {Record<string, Weight>} */
   const distance = {}
   /** @type {Record<string, Node>} */
@@ -36,6 +37,7 @@ export function dijkstra(getNeighbors, weight, {zero, add, lessThan}, id, source
       const dv = distance[idv]
       const wuv = weight(u, v)
       const alt = add(distance[idu], wuv)
+      if (prune(v, alt)) continue
       if (dv === undefined || lessThan(alt, dv)) {
         distance[idv] = alt
         previous[idv] = u

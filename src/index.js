@@ -332,17 +332,26 @@ window.onkeydown = e => {
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (closestId) {
         const p = mapData.points[closestId]
-        p.flybyBoost = ((p.flybyBoost ?? 0) + 1) % 5
+        p.flybyBoost = ((!p.flybyBoost || p.flybyBoost === 'thrust' ? 0 : p.flybyBoost) + 1) % 5
         if (p.flybyBoost === 0)
           delete p.flybyBoost
+        changed()
+      }
+    }
+    if (e.code === 'KeyO') {
+      const closestId = nearestPoint(mousePos.x, mousePos.y)
+      if (closestId) {
+        const p = mapData.points[closestId]
+        p.flybyBoost = 'thrust'
         changed()
       }
     }
     if (e.code === 'KeyV') { // Set point type to be venus
       const closestId = nearestPoint(mousePos.x, mousePos.y)
       if (closestId) {
-        mapData.points[closestId].type = 'venus'
-        mapData.points[closestId].flybyBoost = ((mapData.points[closestId].flybyBoost || 0) % 4) + 1
+        const p = mapData.points[closestId]
+        p.type = 'venus'
+        p.flybyBoost = 2
         changed()
       }
     }
@@ -470,9 +479,10 @@ function getNeighbors(p) {
     if (!(node in edgeLabels) || !(other in edgeLabels[node]) || edgeLabels[node][other] === dir || dir == null) {
       const dir = edgeLabels[other] && edgeLabels[other][node] ? edgeLabels[other][node] : null
       const entryCost = points[other].type === 'burn' ? points[other].landing ?? 1 : 0
-      const flybyBoost = points[other].type === 'venus' && !venusFlybyAvailable ? 0 : points[other].flybyBoost ?? 0
-      const bonusAfterEntry = points[other].landing ? bonus : Math.max(bonus - entryCost + flybyBoost, 0)
-      const bonusUsed = Math.max(bonus - bonusAfterEntry, 0)
+      const flybyBoostRaw = points[other].type === 'venus' && !venusFlybyAvailable ? 0 : points[other].flybyBoost ?? 0
+      const flybyBoost = flybyBoostRaw === 'thrust' ? thrust : flybyBoostRaw
+      const bonusUsed = points[other].landing ? 0 : Math.min(bonus, entryCost)
+      const bonusAfterEntry = Math.max(bonus - bonusUsed + flybyBoost, 0)
       if (burnsRemaining >= entryCost - bonusUsed)
         ns.push({node: other, dir, bonus: bonusAfterEntry, burnsRemaining: burnsRemaining - (entryCost - bonusUsed)})
     }
@@ -876,8 +886,7 @@ function draw() {
         ctx.fillText('☠︎', p.x * width, p.y * height)
         ctx.restore()
       }
-      if ((p.flybyBoost ?? 0) > 0) {
-        const boost = p.flybyBoost
+      if (p.flybyBoost) {
         ctx.save()
         ctx.fillStyle = 'white'
         ctx.shadowOffsetX = 1
@@ -886,7 +895,7 @@ function draw() {
         ctx.font = '14px helvetica'
         ctx.textBaseline = 'middle'
         ctx.textAlign = 'center'
-        ctx.fillText(`+${boost}`, p.x * width, p.y * height)
+        ctx.fillText(`+${p.flybyBoost === 'thrust' ? 'T' : p.flybyBoost}`, p.x * width, p.y * height)
         ctx.restore()
       }
       if (p.type === 'site') {

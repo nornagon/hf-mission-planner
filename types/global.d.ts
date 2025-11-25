@@ -28,7 +28,7 @@ interface MapPoint {
   type: PointType
   hazard?: boolean
   landing?: number
-  flybyBoost?: number
+  flybyBoost?: number|'thrust'
   siteName?: string
   siteSize?: string
   siteWater?: number|string

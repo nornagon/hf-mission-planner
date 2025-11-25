@@ -693,6 +693,33 @@ function toggleSiteType(type) {
   draw()
 }
 
+/** @param {MapPoint} p @param {number} width @param {number} height */
+function toCanvasPoint(p, width, height) {
+  return { x: p.x * width, y: p.y * height }
+}
+
+/**
+ * Draw a catmull-rom spline through the provided points, which can include
+ * decorative points as intermediate handles.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {MapPoint[]} pts
+ * @param {number} width
+ * @param {number} height
+ */
+function drawSplineSegment(ctx, pts, width, height) {
+  if (pts.length < 2) return
+  const canvasPts = pts.map(p => toCanvasPoint(p, width, height))
+  for (let i = 0; i < canvasPts.length - 1; i++) {
+    const p0 = canvasPts[i - 1] || canvasPts[i]
+    const p1 = canvasPts[i]
+    const p2 = canvasPts[i + 1]
+    const p3 = canvasPts[i + 2] || p2
+    const cp1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 }
+    const cp2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 }
+    ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p2.x, p2.y)
+  }
+}
+
 function draw() {
   if (!mapData) return
   const { points, edges, edgeLabels } = mapData
@@ -964,9 +991,29 @@ function draw() {
     const p0 = mapData.points[highlightedPath[0].node]
     ctx.beginPath()
     ctx.moveTo(p0.x * width, p0.y * height)
-    for (let p of highlightedPath.slice(1)) {
-      const point = mapData.points[p.node]
-      ctx.lineTo(point.x * width, point.y * height)
+    /** @type {MapPoint[]} */
+    let segmentPoints = [p0]
+    let segmentHasDecorative = false
+
+    for (let i = 1; i < highlightedPath.length; i++) {
+      const currentPoint = mapData.points[highlightedPath[i].node]
+      segmentPoints.push(currentPoint)
+      segmentHasDecorative = segmentHasDecorative || currentPoint.type === 'decorative'
+
+      const isAnchor = currentPoint.type !== 'decorative'
+      const isLast = i === highlightedPath.length - 1
+      if (isAnchor || isLast) {
+        if (segmentPoints.length > 1) {
+          if (!segmentHasDecorative && segmentPoints.length === 2) {
+            const end = segmentPoints[1]
+            ctx.lineTo(end.x * width, end.y * height)
+          } else {
+            drawSplineSegment(ctx, segmentPoints, width, height)
+          }
+        }
+        segmentPoints = [currentPoint]
+        segmentHasDecorative = false
+      }
     }
     ctx.stroke()
     ctx.restore()

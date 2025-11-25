@@ -448,7 +448,7 @@ function getNeighbors(p) {
       }
     }
   }
-  if (!wait && (points[node].type === 'hohmann' || (points[node].type === 'burn' && burnsRemaining === 0))) {
+  if (!wait && (points[node].type === 'hohmann' || ((points[node].type === 'burn' || points[node].type === 'lagrange') && burnsRemaining === 0))) {
     // Wait a turn.
     ns.push({node, dir: null, bonus: 0, wait: true, burnsRemaining: thrust})
   }
@@ -532,13 +532,24 @@ function radHazardWeight(u, v) {
   return 0
 }
 
+/** @param {PathNode} u @param {PathNode} v */
+function segmentWeight(u, v) {
+  const { points } = mapData
+  const vType = points[v.node].type
+  if (vType === 'decorative') {
+    return 0
+  }
+  return 1
+}
+
 /** @param {PathNode} u @param {PathNode} v @returns {number[]} */
 function nodeWeight(u, v) {
   const burns = burnWeight(u, v)
   const turns = turnWeight(u, v)
   const hazards = hazardWeight(u, v)
   const radHazards = radHazardWeight(u, v)
-  return [burns, turns, hazards, radHazards, 1]
+  const segment = segmentWeight(u, v)
+  return [burns, turns, hazards, radHazards, segment]
 }
 
 const PATH_ID = Symbol('pathId')

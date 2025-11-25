@@ -141,6 +141,17 @@ function endPathing() {
   pathData = null
 }
 
+function recomputeHighlightedPath() {
+  const source = pathOrigin ?? highlightedPath?.[0].node
+  if (source) {
+    pathData = findPath(source)
+    const pathDestination = highlightedPath?.[highlightedPath.length - 1].node
+    if (pathDestination)
+      highlightedPath = drawPath(pathData, source, pathDestination)
+    draw()
+  }
+}
+
 function refreshPath() {
   if (pathOrigin && pathData) {
     const closestId = nearestPoint(mousePos.x, mousePos.y, id => mapData.points[id].type !== 'decorative')
@@ -368,11 +379,7 @@ window.onkeydown = e => {
   } else {
     if (e.code === 'KeyV') {
       venusFlybyAvailable = !venusFlybyAvailable
-      if (pathData) {
-        beginPathing(pathOrigin)
-        refreshPath()
-        draw()
-      }
+      recomputeHighlightedPath()
     }
   }
 
@@ -671,14 +678,7 @@ function setThrust(value) {
   const rounded = Math.round(value)
   const clamped = Math.max(1, Math.min(15, rounded))
   thrust = clamped
-  const source = pathOrigin ?? highlightedPath?.[0].node
-  if (source) {
-    pathData = findPath(source)
-    const pathDestination = highlightedPath?.[highlightedPath.length - 1].node
-    if (pathDestination)
-      highlightedPath = drawPath(pathData, source, pathDestination)
-  }
-  draw()
+  recomputeHighlightedPath()
 }
 
 /** @param {string} type */

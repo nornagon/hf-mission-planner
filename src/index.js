@@ -1123,7 +1123,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {path: highlightedPath, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {mapData, path: highlightedPath, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
 }
 
 /** @param {number} burns */

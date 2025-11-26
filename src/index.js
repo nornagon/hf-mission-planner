@@ -117,6 +117,8 @@ canvas.onclick = e => {
 
     if (canPath(closestId)) {
       highlightedPath = drawPath(pathData, pathOrigin, closestId)
+      // @ts-ignore
+      window.highlightedPath = highlightedPath
       endPathing()
     } else {
       beginPathing(closestId)

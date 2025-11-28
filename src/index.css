@@ -212,3 +212,30 @@ canvas { display: block; }
   border: 1px solid white;
   border-radius: 999px;
 }
+
+@media (max-width: 720px) {
+  #overlay {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px;
+    left: 0;
+    right: 0;
+  }
+
+  .VehicleInfo {
+    order: -1;
+    align-self: flex-start;
+    width: min(260px, calc(50vw - 16px));
+    border: 4px solid white;
+    border-radius: 8px;
+  }
+
+  .PathInfo {
+    align-self: flex-start;
+    width: min(260px, calc(50vw - 16px));
+    border: 4px solid white;
+    border-radius: 8px;
+  }
+}

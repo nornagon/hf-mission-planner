@@ -58,11 +58,26 @@ canvas { display: block; }
 .PathInfo-destinationRow {
   align-self: flex-start;
   justify-self: flex-start;
+  gap: 8px;
+  width: 100%;
 }
 .PathInfo-destination {
   font-style: italic;
   font-size: 80%;
   white-space: normal;
+  flex: 1;
+}
+.PathInfo-cancelButton {
+  padding: 4px 6px;
+  background: transparent;
+  color: white;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+.PathInfo-cancelButton:active {
+  transform: translateY(1px);
 }
 
 .VehicleInfo {

@@ -9,8 +9,8 @@ const pl = (n, sg, pl) => n === 1 ? `${n} ${sg}` : `${n} ${pl}`
 
 /** @typedef {import('./MapData').MapData} MapData */
 
-/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void}} props */
-function PathInfo({mapData, path, weight, metricPriority, prioritizeMetric}) {
+/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, cancelPath: () => void}} props */
+function PathInfo({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath}) {
   if (!path) return e('div')
   
   const sourcePoint = path ? mapData.points[path[0].node] : null
@@ -38,9 +38,15 @@ function PathInfo({mapData, path, weight, metricPriority, prioritizeMetric}) {
         }, '⬆'),
       )
     }),
-    destinationPoint?.siteName || sourcePoint?.siteName ? e('div', {className: 'PathInfo-row PathInfo-destinationRow'},
-      e('span', {className: 'PathInfo-destination'}, `${sourcePoint.siteName ?? '•'} → ${destinationPoint.siteName ?? '•'}`),
-    ) : null,
+    e('div', {className: 'PathInfo-row PathInfo-destinationRow'},
+      e('span', {className: 'PathInfo-destination'}, `${sourcePoint?.siteName ?? '•'} → ${destinationPoint?.siteName ?? '•'}`),
+      e('button', {
+        type: 'button',
+        className: 'PathInfo-cancelButton',
+        'aria-label': 'Cancel path',
+        onClick: cancelPath,
+      }, '✕'),
+    ),
   )
 }
 
@@ -115,10 +121,10 @@ function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggle
   )
 }
 
-/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
-export function Overlay({mapData, path, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
+/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, cancelPath: () => void, isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
+export function Overlay({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
   return e(React.Fragment, null,
-    PathInfo({mapData, path, weight, metricPriority, prioritizeMetric}),
+    PathInfo({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath}),
     VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}),
   )
 }

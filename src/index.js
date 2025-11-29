@@ -66,6 +66,12 @@ let pathOrigin = null
 /** @type {PathData|null} */
 let pathData = null
 
+function cancelPathSelection() {
+  connecting = null
+  pathOrigin = null
+  highlightedPath = null
+}
+
 /** @param {MapDataJSON} json */
 const loadData = (json) => {
   mapData = MapData.fromJSON(json)
@@ -242,9 +248,7 @@ function nearestEdge(testX, testY) {
 /** @param {KeyboardEvent} e */
 window.onkeydown = e => {
   if (e.code === 'Escape') {
-    connecting = null
-    pathOrigin = null
-    highlightedPath = null
+    cancelPathSelection()
   }
   if (editing) {
     if (e.code === 'KeyA') { // Add edge
@@ -1125,7 +1129,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {mapData, path: highlightedPath, weight, metricPriority, prioritizeMetric, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {mapData, path: highlightedPath, weight, metricPriority, prioritizeMetric, cancelPath: () => { cancelPathSelection(); draw() }, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
 }
 
 /** @param {number} burns */

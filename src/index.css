@@ -82,19 +82,73 @@ canvas { display: block; }
 
 .VehicleInfo {
   color: white;
-  font-size: 20px;
+  font-size: 18px;
   font-family: sans-serif;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+.VehicleInfo[open] {
   background: black;
   border-top: 4px solid white;
   border-left: 4px solid white;
   border-top-left-radius: 8px;
   width: 260px;
   padding: 16px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+.VehicleInfo summary {
+  cursor: pointer;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  list-style: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  user-select: none;
+}
+.VehicleInfo[open] summary {
+  padding: 4px 0;
+}
+.VehicleInfo:not([open]) summary {
+  font-size: 200%;
+}
+.VehicleInfo summary::-webkit-details-marker {
+  display: none;
+}
+.VehicleInfo summary:focus-visible {
+  outline: 2px dashed white;
+  border-radius: 4px;
+}
+.VehicleInfo summary::after {
+  display: none;
+}
+.VehicleInfo .vehicle-info-body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
-  pointer-events: auto;
+  margin-top: 10px;
+}
+.VehicleInfo:not([open]) .vehicle-info-title {
+  display: none;
+}
+.VehicleInfo:not([open]) {
+  padding: 0;
+  box-shadow: none;
+  gap: 0;
+  border: none;
+  background: transparent;
+}
+@media (min-width: 721px) {
+  .VehicleInfo:not([open]) summary {
+    padding: 6px 12px;
+  }
 }
 
 .VehicleInfo .field {
@@ -111,6 +165,40 @@ canvas { display: block; }
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+.VehicleInfo .solar-season-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.VehicleInfo .solar-season-button {
+  padding: 10px 0;
+  background: #111;
+  color: white;
+  border: 2px solid white;
+  border-radius: 6px;
+  font-size: 18px;
+}
+.VehicleInfo .solar-season-button.selected {
+  color: black;
+}
+.VehicleInfo .solar-season-button:active {
+  transform: translateY(1px);
+}
+.VehicleInfo .solar-season-button.solar-season-red.selected {
+  background: #ed1c25;
+  border-color: #ed1c25;
+  color: white;
+}
+.VehicleInfo .solar-season-button.solar-season-yellow.selected {
+  background: #fdf100;
+  border-color: #fdf100;
+  color: black;
+}
+.VehicleInfo .solar-season-button.solar-season-blue.selected {
+  background: #01abef;
+  border-color: #01abef;
+  color: white;
 }
 .VehicleInfo .isru-buttons {
   display: grid;

@@ -60,7 +60,8 @@ let mapData = new MapData
 let connecting = null
 /** @type {PathNode[]|null} */
 let highlightedPath = null
-let venusFlybyAvailable = false
+/** @type {'red'|'yellow'|'blue'} */
+let solarSeason = 'red'
 /** @type {string|null} */
 let pathOrigin = null
 /** @type {PathData|null} */
@@ -369,8 +370,10 @@ window.onkeydown = e => {
         const name = prompt("Site name", p.siteName)
         const size = prompt("Site size + type", p.siteSize)
         const water = prompt("Site water", p.siteWater != null ? String(p.siteWater) : '')
+        const synodic = prompt("Synodic?", p.siteSynodic != null ? String(p.siteSynodic) : '')
         if (name !== null) p.siteName = name
         if (size !== null) p.siteSize = size
+        if (synodic && (synodic === 'yellow' || synodic === 'blue' || synodic === 'red')) p.siteSynodic = synodic
         if (water !== null) {
           const parsed = Number(water)
           if (Number.isFinite(parsed)) {
@@ -394,11 +397,6 @@ window.onkeydown = e => {
     if (e.code === 'KeyJ') { // Download formatted JSON
       downloadFormattedJSON()
       e.preventDefault()
-    }
-  } else {
-    if (e.code === 'KeyV') {
-      venusFlybyAvailable = !venusFlybyAvailable
-      recomputeHighlightedPath()
     }
   }
 
@@ -460,6 +458,7 @@ function getNeighbors(p) {
   /** @type {PathNode[]} */
   const ns = [{node, dir: null, bonus: 0, done: true, burnsRemaining}] // Ending the turn is always valid. TODO: not on a lander burn!
   const { edgeLabels, points } = mapData
+  const venusFlybyAvailable = solarSeason === 'blue'
   if (edgeLabels[node] && dir != null && !wait) {
     for (const otherNode of Object.keys(edgeLabels[node])) {
       if (edgeLabels[node][otherNode] !== dir) {
@@ -739,6 +738,12 @@ function isSiteTypeEnabled(p) {
 }
 
 const siteTypeOptions = ['C', 'S', 'M', 'V', 'D', 'H']
+const solarSeasonOptions = ['red', 'yellow', 'blue']
+const synodicStrokeColors = {
+  red: '#ed1c25',
+  yellow: '#fdf100',
+  blue: '#01abef',
+}
 
 /** @typedef {'burns'|'turns'|'hazards'|'radHazards'} MetricKey */
 /** @type {MetricKey[]} */
@@ -779,6 +784,14 @@ function toggleSiteType(type) {
   draw()
 }
 
+/** @param {'red'|'yellow'|'blue'} season */
+function setSolarSeason(season) {
+  if (!solarSeasonOptions.includes(season)) return
+  solarSeason = season
+  recomputeHighlightedPath()
+  draw()
+}
+
 /** @param {MapPoint} p @param {number} width @param {number} height */
 function toCanvasPoint(p, width, height) {
   return { x: p.x * width, y: p.y * height }
@@ -811,6 +824,7 @@ function draw() {
   const { points, edges, edgeLabels } = mapData
   const ctx = canvas.getContext('2d')
   const {width, height} = ctx.canvas
+  const venusFlybyAvailable = solarSeason === 'blue'
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.lineWidth = 2
   const nearestToCursor = nearestPoint(mousePos.x, mousePos.y)
@@ -901,6 +915,9 @@ function draw() {
         ctx.fillStyle = 'orange'
       } else if (p.type === 'site') {
         ctx.fillStyle = 'black'
+        if (p.siteSynodic) {
+          ctx.strokeStyle = synodicStrokeColors[p.siteSynodic] ?? 'white'
+        }
       } else if (p.type === 'burn') {
         ctx.fillStyle = '#d60f7a'
       } else {
@@ -999,16 +1016,6 @@ function draw() {
           ctx.stroke()
           ctx.restore()
         }
-        ctx.save()
-        ctx.font = 'italic bold 14px helvetica'
-        ctx.fillStyle = 'white'
-        ctx.shadowColor = 'black'
-        ctx.shadowOffsetX = 1
-        ctx.shadowOffsetY = 1
-        ctx.textBaseline = 'bottom'
-        ctx.textAlign = 'center'
-        ctx.fillText(`Press [V] to toggle`, p.x * width, p.y * height - 25)
-        ctx.restore()
       }
     }
     const nearest = nearestPoint(mousePos.x, mousePos.y, id => points[id].type !== 'decorative')
@@ -1042,7 +1049,8 @@ function draw() {
         const siteWater = Number(p.siteWater ?? 0)
         const siteSize = siteSizeValue(p)
         const hasThrust = siteSize != null && thrust > siteSize
-        if (p.type === 'site' && siteWater >= isru && hasThrust && isSiteTypeEnabled(p)) {
+        const matchesSynodicSeason = p.siteSynodic == null || p.siteSynodic === solarSeason
+        if (p.type === 'site' && siteWater >= isru && hasThrust && isSiteTypeEnabled(p) && matchesSynodicSeason) {
           ctx.save()
           ctx.font = 'bold 70px helvetica'
           ctx.shadowColor = 'black'
@@ -1129,7 +1137,7 @@ function draw() {
     ctx.restore()
   }
   const weight = pathWeight(highlightedPath)
-  ReactDOM.render(React.createElement(Overlay, {mapData, path: highlightedPath, weight, metricPriority, prioritizeMetric, cancelPath: () => { cancelPathSelection(); draw() }, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}), overlay)
+  ReactDOM.render(React.createElement(Overlay, {mapData, path: highlightedPath, weight, metricPriority, prioritizeMetric, cancelPath: () => { cancelPathSelection(); draw() }, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType, solarSeason, setSolarSeason}), overlay)
 }
 
 /** @param {number} burns */

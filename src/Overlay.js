@@ -54,8 +54,10 @@ const isruLevels = [0, 1, 2, 3, 4]
 
 const siteTypeOptions = ['C', 'S', 'M', 'V', 'D', 'H']
 
-/** @param {{isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} param0 */
-function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
+const solarSeasonOptions = ['red', 'yellow', 'blue']
+
+/** @param {{isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void, solarSeason: string, setSolarSeason: (value: string) => void}} param0 */
+function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType, solarSeason, setSolarSeason}) {
   /** @param {string} value */
   const updateThrust = (value) => {
     const n = Number(value)
@@ -63,68 +65,90 @@ function VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggle
     setThrust(n)
   }
 
-  return e('div', {className: 'VehicleInfo'},
-    e('div', {className: 'field', role: 'group', 'aria-label': 'Thrust'},
-      e('div', {className: 'label-row'},
-        e('span', {className: 'label'}, 'Thrust')
-      ),
-      e('div', {className: 'thrust-inputs'},
-        e('input', {
-          type: 'range',
-          min: 1,
-          max: 15,
-          step: 1,
-          value: thrust,
-          onChange: (ev) => updateThrust(ev.target.value),
-        }),
-        e('input', {
-          type: 'number',
-          min: 1,
-          max: 15,
-          step: 1,
-          value: thrust,
-          inputMode: 'numeric',
-          onChange: (ev) => updateThrust(ev.target.value),
-        }),
-      )
+  return e('details', {className: 'VehicleInfo', open: true},
+    e('summary', {className: 'vehicle-info-summary'},
+      e('span', {className: 'vehicle-info-icon'}, '🚀'),
+      e('span', {className: 'vehicle-info-title'}, 'Vehicle Info'),
     ),
-    e('div', {className: 'field', role: 'group', 'aria-label': 'Site Hydration'},
-      e('span', {className: 'label'}, 'Site Hydration'),
-      e('div', {className: 'isru-buttons'},
-        isruLevels.map(level =>
-          e('button', {
-            key: level,
-            type: 'button',
-            className: 'isru-button' + (isru === level ? ' selected' : ''),
-            'aria-pressed': isru === level,
-            onClick: () => setIsru(level),
-          }, `${level}+`)
+    e('div', {className: 'vehicle-info-body'},
+      e('div', {className: 'field', role: 'group', 'aria-label': 'Thrust'},
+        e('div', {className: 'label-row'},
+          e('span', {className: 'label'}, 'Thrust')
+        ),
+        e('div', {className: 'thrust-inputs'},
+          e('input', {
+            type: 'range',
+            min: 1,
+            max: 15,
+            step: 1,
+            value: thrust,
+            onChange: (ev) => updateThrust(ev.target.value),
+          }),
+          e('input', {
+            type: 'number',
+            min: 1,
+            max: 15,
+            step: 1,
+            value: thrust,
+            inputMode: 'numeric',
+            onChange: (ev) => updateThrust(ev.target.value),
+          }),
         )
-      )
-    ),
-    e('div', {className: 'field', role: 'group', 'aria-label': 'Spectral Type'},
-      e('div', {className: 'label-row'},
-        e('span', {className: 'label'}, 'Spectral Type'),
       ),
-      e('div', {className: 'site-type-buttons'},
-        siteTypeOptions.map(type =>
+      e('div', {className: 'field', role: 'group', 'aria-label': 'Solar Season'},
+        e('div', {className: 'label-row'},
+          e('span', {className: 'label'}, 'Solar Season'),
+        ),
+        e('div', {className: 'solar-season-buttons'},
+          solarSeasonOptions.map(season =>
           e('button', {
-            key: type,
+            key: season,
             type: 'button',
-            className: 'site-type-button' + (enabledSiteTypes.has(type) ? ' selected' : ''),
-            'aria-pressed': enabledSiteTypes.has(type),
-            onClick: () => toggleSiteType(type),
-          }, type)
+            className: `solar-season-button solar-season-${season}` + (solarSeason === season ? ' selected' : ''),
+            'aria-pressed': solarSeason === season,
+            onClick: () => setSolarSeason(season),
+          }, season[0].toUpperCase() + season.slice(1))
+        )
+        )
+      ),
+      e('div', {className: 'field', role: 'group', 'aria-label': 'Site Hydration'},
+        e('span', {className: 'label'}, 'Site Hydration'),
+        e('div', {className: 'isru-buttons'},
+          isruLevels.map(level =>
+            e('button', {
+              key: level,
+              type: 'button',
+              className: 'isru-button' + (isru === level ? ' selected' : ''),
+              'aria-pressed': isru === level,
+              onClick: () => setIsru(level),
+            }, `${level}+`)
+          )
+        )
+      ),
+      e('div', {className: 'field', role: 'group', 'aria-label': 'Spectral Type'},
+        e('div', {className: 'label-row'},
+          e('span', {className: 'label'}, 'Spectral Type'),
+        ),
+        e('div', {className: 'site-type-buttons'},
+          siteTypeOptions.map(type =>
+            e('button', {
+              key: type,
+              type: 'button',
+              className: 'site-type-button' + (enabledSiteTypes.has(type) ? ' selected' : ''),
+              'aria-pressed': enabledSiteTypes.has(type),
+              onClick: () => toggleSiteType(type),
+            }, type)
+          )
         )
       )
     )
   )
 }
 
-/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, cancelPath: () => void, isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void}} props */
-export function Overlay({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}) {
+/** @param {{mapData: MapData, path: PathNode[]|null, weight: {burns: number, turns: number, hazards: number, radHazards: number}, metricPriority: MetricKey[], prioritizeMetric: (metric: MetricKey) => void, cancelPath: () => void, isru: number, setIsru: (value: number) => void, thrust: number, setThrust: (value: number) => void, enabledSiteTypes: Set<string>, toggleSiteType: (type: string) => void, solarSeason: string, setSolarSeason: (value: string) => void}} props */
+export function Overlay({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath, isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType, solarSeason, setSolarSeason}) {
   return e(React.Fragment, null,
     PathInfo({mapData, path, weight, metricPriority, prioritizeMetric, cancelPath}),
-    VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType}),
+    VehicleInfo({isru, setIsru, thrust, setThrust, enabledSiteTypes, toggleSiteType, solarSeason, setSolarSeason}),
   )
 }

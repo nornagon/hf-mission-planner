@@ -690,7 +690,8 @@
       "type": "site",
       "siteName": "Icarus",
       "siteSize": "1S",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "red"
     },
     "0.5512270706027005": {
       "x": 0.6359259259259259,
@@ -1122,7 +1123,8 @@
       "type": "site",
       "siteName": "Phaethon",
       "siteSize": "1H",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "yellow"
     },
     "0.7662353374915887": {
       "x": 0.6351851851851852,
@@ -2191,7 +2193,8 @@
       "type": "site",
       "siteName": "Comet Holmes",
       "siteSize": "1D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "red"
     },
     "0.854121208040407": {
       "x": 0.7466666666666667,
@@ -2209,7 +2212,8 @@
       "type": "site",
       "siteName": "Comet Borrelly",
       "siteSize": "1D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "yellow"
     },
     "0.2643861234022735": {
       "x": 0.6664814814814815,
@@ -2296,7 +2300,8 @@
       "type": "site",
       "siteName": "Comet Encke",
       "siteSize": "1V",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "blue"
     },
     "0.47045796806616913": {
       "x": 0.5581481481481482,
@@ -2686,7 +2691,8 @@
       "type": "site",
       "siteName": "Comet Bartley 2",
       "siteSize": "1D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "yellow"
     },
     "0.942937505828084": {
       "x": 0.35388888888888886,
@@ -2903,7 +2909,8 @@
       "type": "site",
       "siteName": "Comet Neujmin 1",
       "siteSize": "1D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "blue"
     },
     "0.0664785816865836": {
       "x": 0.3814814814814815,
@@ -3379,7 +3386,8 @@
       "type": "site",
       "siteName": "Hermes A",
       "siteSize": "1S",
-      "siteWater": "0"
+      "siteWater": 0,
+      "siteSynodic": "blue"
     },
     "0.5499904904518309": {
       "x": 0.45944444444444443,
@@ -3387,7 +3395,8 @@
       "type": "site",
       "siteName": "Hermes B",
       "siteSize": "1S",
-      "siteWater": "0"
+      "siteWater": 0,
+      "siteSynodic": "blue"
     },
     "0.21009217614767972": {
       "x": 0.24962962962962962,
@@ -3474,7 +3483,8 @@
       "type": "site",
       "siteName": "Kreutz Sungrazer",
       "siteSize": "1H",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "yellow"
     },
     "0.3205727936128626": {
       "x": 0.2225925925925926,
@@ -3482,7 +3492,8 @@
       "type": "site",
       "siteName": "Comet Crommelin",
       "siteSize": "1D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "yellow"
     },
     "0.05459541883068564": {
       "x": 0.24074074074074073,
@@ -3773,7 +3784,8 @@
       "type": "site",
       "siteName": "Asbolus",
       "siteSize": "3D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "blue"
     },
     "0.6848456583017779": {
       "x": 0.17425925925925925,
@@ -4098,7 +4110,8 @@
       "type": "site",
       "siteName": "Comet Halley",
       "siteSize": "1H",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "red"
     },
     "0.9101413450737323": {
       "x": 0.23296296296296296,
@@ -4227,7 +4240,8 @@
       "type": "site",
       "siteName": "Pholus",
       "siteSize": "4D",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "red"
     },
     "0.5138050108188239": {
       "x": 0.1674074074074074,
@@ -6123,7 +6137,8 @@
       "type": "site",
       "siteName": "Bee-Zed",
       "siteSize": "1H",
-      "siteWater": "4"
+      "siteWater": 4,
+      "siteSynodic": "red"
     },
     "0.027716976085166767": {
       "x": 0.45537037037037037,

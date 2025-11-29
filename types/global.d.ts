@@ -32,6 +32,7 @@ interface MapPoint {
   siteName?: string
   siteSize?: string
   siteWater?: number|string
+  siteSynodic?: 'yellow'|'blue'|'red'
 }
 
 type PointMap = Record<string, MapPoint>
